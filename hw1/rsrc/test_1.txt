@@ -1,0 +1,3 @@
+What is Docker?
+You might have heard this word before and might sound pretty intimidating at first especially when introduced to it.
+Docker is a containerization platform that packages your app and all its dependencies together in the form called a docker container to ensure that your application works seamlessly in any environment. This environment might be a production or staging server.

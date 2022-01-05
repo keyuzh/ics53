@@ -1,0 +1,11 @@
+What Is Kubernetes?
+Kubernetes is popularly known as K8s
+K8s is a production-grade open-source container orchestration tool developed by Google to help you manage the containerized/dockerized applications supporting multiple deployment environments like On-premise, cloud, or virtual machines.
+k8s automates the deployment of your containerised images and helps the same to scale horizontally to support high level of application availability
+Why K8s: What Problem Does K8S Solve?
+One of the primary reasons why K8s became so popular is the ever-growing demand for businesses to support their micro service-driven architectural needs.
+Microservice architecture helps companies in :
+Independently develop and deploy their complex applications by breaking them into small scalable modules
+Help them work in multiple small teams supporting individual application modules, to be developed and deployed with the required speed and agility
+This desire of the companies to move from legacy monolith to Microservices has led to the creation of large containerized applications. Each container image in itself is a Microservice that needs to be managed and scaled efficiently with less overhead, this demand to handle thousands and thousands of container became a tedious task for the organization. This problem led to the evolution of K8s as one of the popular container orchestration tools.
+The organization adopted a container orchestration tool like Kubernetes due to the following key benefits
