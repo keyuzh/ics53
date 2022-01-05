@@ -1,5 +1,5 @@
-// Your name
-// Netid
+// Keyu Zhang
+// keyuz4
 
 
 
@@ -9,7 +9,11 @@ int main (int argc, char *argv[])
 {
 
 	//Comment/Delete this print statement and insert your hw0 code here 
-	printf("Hello ICS53 student!\n"); 
+	// printf("Hello ICS53 student!\n"); 
+	for (int i = argc-1; i >= 0; --i)
+	{
+		printArg(argv[i], i);
+	}
 
 	return 0;
 }
@@ -18,6 +22,7 @@ int main (int argc, char *argv[])
 void printArg(char * arg_str, int pos){
 
 	//Insert your code here
+	printf("Argument[%d]: %s\n", pos, arg_str);
 
 	return;
 }
