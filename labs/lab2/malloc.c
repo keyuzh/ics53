@@ -12,7 +12,7 @@ int main(int agrc, char **argv) {
         printf("stuff[%d]: %d\n", i, stuff[i]);
     printf("\n");
 
-    // free(stuff); //Uncomment for Question 26 
+    free(stuff); //Uncomment for Question 26 
 
     stuff[0] = 0xFFFFFFFF;
     stuff[1] = 0xCAFEBABE;
