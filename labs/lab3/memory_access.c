@@ -37,14 +37,25 @@ struct b {
 };
 
 int main(int agrc, char **argv) {
-  unsigned long var = /*FILL IN THE VALUE GIVEN IN THE LAB DOC HERE*/;
+  unsigned long var = 0xBEEFCAFE;
   void *vp = &var;
   printf("Value of var: 0x%lx\n", var);
   printf("Address of var: %p\n\n", vp);
 
   printf("Value of data2 field when the address of var (%p) is " 
          "visualized as struct s: %0x\n",
-         vp, ((struct s *)vp)->data2);
+         vp, ((struct b *)vp)->data1);
+  ((struct c *)&var)->data3 = '@';
+
+
+  ((struct c *)&var).data3 = '@';
+
+  ((struct c *)var).data3 = '@';
+
+  ((struct c **)var)->data3 = '@';
+
+  ((struct c )&var)->data3 = '@';
+
 
   return 0;
 }
