@@ -6,17 +6,21 @@
 // Main program
 int main(int argc, char *argv[]) {
 
-    char mode = getMode(argv);
+    Options opt;
+
+    opt.mode = getMode(argv);
     // printf("Mode: %c\n", mode);
-    int modeS = isModeS(argc, argv);
+    opt.s = isModeS(argc, argv);
+    opt.o = isModeOther(argc, argv, 'O');
+    opt.p = isModeOther(argc, argv, 'P');
 
     char* message;
     unsigned int numHidden;
-    switch (mode)
+    switch (opt.mode)
     {
     case 'L':
-        message = modeLFormat(argv[2], modeS);
-        numHidden = modeLprocess(message, modeS);
+        message = modeLFormat(argv[2], opt.s);
+        numHidden = modeLprocess(message, opt);
         break;
     
     default:

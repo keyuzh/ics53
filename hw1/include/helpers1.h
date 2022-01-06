@@ -2,13 +2,21 @@
 # ifndef HW1_HELPERS
 # define HW1_HELPERS
 
+typedef struct
+{
+    int s, o, p;
+    char mode;
+} Options;
+
 
 char getMode(char *argv[]);
 
 char* modeLFormat(char* msg, int s);
 
-unsigned int modeLprocess(char* msg, int s);
+unsigned int modeLprocess(char* msg, Options op);
 
 int isModeS(int argc, char* argv[]);
+
+int isModeOther(int argc, char* argv[], const char mode);
 
 # endif

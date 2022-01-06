@@ -28,11 +28,23 @@ char* modeLFormat(char* msg, int s)
     }
     *res = '\0';
     
-    // printf("%s\n", result);
+    // printf("MESSAGE:%s\n", result);
     return result;
 }
 
-unsigned int modeLprocess(char* msg, int s)
+void skipToNextLine()
+{
+    char t;
+    while (1)
+    {
+        t = tolower(getchar());
+        if (t == EOF) { return; }
+        printf("%c", t);
+        if (t == '\n') { return; }
+    }
+}
+
+unsigned int modeLprocess(char* msg, Options op)
 {
     char temp;
     unsigned int count = 0;
@@ -43,19 +55,21 @@ unsigned int modeLprocess(char* msg, int s)
         {
             break;
         }
-        else if (*msg != '\0' && *msg != ' ' && temp == *msg)
+        if ((*msg != '\0' && *msg != ' ' && temp == *msg)
+           || (*msg == ' ' && strchr(",!?.", temp) != NULL && op.s != 0))
         {
             temp = toupper(temp);
+            printf("%c", temp);
+            if (*msg == ' ')
+            {
+                printf("%*c", op.s, ' ');
+            }
+            if (op.o)
+            {
+                skipToNextLine();
+            }
             ++msg;
             ++count;
-            printf("%c", temp);
-        }
-        else if (*msg == ' ' && strchr(",!?.", temp) != NULL && s != 0)
-        {
-            ++msg;
-            ++count;
-            printf("%c", temp);
-            printf("%*c", s, ' ');
         }
         else
         {
@@ -72,6 +86,22 @@ int isModeS(int argc, char* argv[])
         if (strcmp(argv[i], "-S") == 0)
         {
             return atoi(argv[i+1]);
+        }
+    }
+    return 0;
+}
+
+int isModeOther(int argc, char* argv[], const char mode)
+{
+    char target[2] = "-";
+    // strcat(target, mode);
+    target[1] = mode;
+    // printf("%s\n", target);
+    for (int i = 3; i < argc; i++)
+    {
+        if (strcmp(argv[i], target) == 0)
+        {
+            return 1;
         }
     }
     return 0;
