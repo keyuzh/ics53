@@ -5,6 +5,27 @@
 
 // Main program
 int main(int argc, char *argv[]) {
-    // Insert your hw1 code here    
+
+    char mode = getMode(argv);
+    // printf("Mode: %c\n", mode);
+    int modeS = isModeS(argc, argv);
+
+    char* message;
+    unsigned int numHidden;
+    switch (mode)
+    {
+    case 'L':
+        message = modeLFormat(argv[2], modeS);
+        numHidden = modeLprocess(message, modeS);
+        break;
+    
+    default:
+        break;
+    }
+
+    fprintf(stderr, "%u\n", numHidden);
+
+    free(message);
+
     return 0;
 }
