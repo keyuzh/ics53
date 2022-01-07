@@ -79,6 +79,47 @@ unsigned int modeLprocess(char* msg, Options op)
     return count;
 }
 
+void readNextWord(char* buf)
+{
+    int max = sizeof(*buf);
+    int index = 0;
+    char temp;
+    while (index < max)
+    {
+        temp = getchar();
+        if (temp == ' ')
+        {
+            
+        }
+        buf[index] = temp;
+        ++index;
+    }
+    buf[index]
+    
+}
+
+unsigned int modeWprocess(char* msg, Options op)
+{
+    char* buf = malloc(sizeof(*msg));
+    unsigned int matchCnt = 0;
+    unsigned int lineCnt = 1;
+    unsigned int wordCnt = 1;
+
+    char* nextWord = msg;
+
+    while (1)
+    {
+        int index = 0;
+
+
+        
+    }
+    
+
+
+    
+}
+
 int isModeS(int argc, char* argv[])
 {
     for (int i = 3; i < argc; i++)
