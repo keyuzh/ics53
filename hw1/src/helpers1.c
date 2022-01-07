@@ -13,25 +13,36 @@ char getMode(char *argv[])
 char* modeWFormat(char* msg)
 {
     // printf("%ld\n", strlen(msg));
-    char* result = malloc(strlen(msg));
+    char* result = malloc(strlen(msg) + 1);
     char* org = msg;
     char* res = result;
 
     while (*org != 0)
     {
         *res = tolower(*org);
+        if (*org == ' ')
+        {
+            char* nxt = org;
+            while (*nxt == ' ')
+            {
+                ++nxt;
+            }
+            org = --nxt;
+        }
         ++res;
         ++org;
     }
     *res = '\0';
     
-    printf("MESSAGE:%s\n", result);
+    // printf("MESSAGE:%s\n", result);
     return result;
 }
 
 char* modeLFormat(char* msg, int s)
 {
-    char* result = malloc(strlen(msg));
+    // printf("%ld\n", strlen(msg)+1);
+    int msglen = strlen(msg) + 1;
+    char* result = malloc(msglen);
 
     char* org = msg;
     char* res = result;
@@ -195,9 +206,108 @@ void readCompare(char* word, Wstats* s, Options op)
     // }
 }
 
+void readNextWordInMessage(char** msg, char* buf)
+{
+    // skip til non space
+    while (**msg == ' ')
+    {
+        ++*msg;
+    }
+    // copy til space
+    while (**msg != ' ' && **msg != '\0')
+    {
+        *buf = **msg;
+        ++*msg;
+        ++buf;
+    }
+    *buf = '\0';
+}
+
+char readNextWordFromInput(char* buf, Wstats* s, unsigned int bufSz)
+{
+    char nextChar;
+    unsigned int index = 0;
+    do // skip til non space
+    {
+        nextChar = tolower(getchar());
+        if (nextChar == '\n') { incLine(s); }
+    } while (isspace(nextChar) && nextChar != EOF);
+    // copy til space
+    do
+    {
+        buf[index] = nextChar;
+        nextChar = tolower(getchar());
+        if (++index >= bufSz)
+        {
+            // word longer than buffer, impossible to be a match
+            index = 0;
+            // skip til space
+            while (!isspace(nextChar) && nextChar != EOF)
+            {
+                nextChar = getchar();
+                // printf("%c", nextChar);
+            }
+            break;
+        }
+    } while (!isspace(nextChar) && nextChar != EOF);
+    buf[index] = '\0';
+    return nextChar;
+}
+
+void readCompare2(char* msg, Wstats* s, Options op)
+{
+    char* msgBuffer = malloc(strlen(msg) + 1);
+    unsigned int inputBufferSize = strlen(msg) + 1;
+    char* inputBuffer = malloc(inputBufferSize);
+
+    while (1)
+    {
+        readNextWordInMessage(&msg, msgBuffer);
+        if (*msgBuffer == '\0')
+        {
+            break;
+        }
+        int notMatch = 1;
+        // Wstats sCopy = *s;
+        while (notMatch)
+        {
+            char lastChar = readNextWordFromInput(inputBuffer, s, inputBufferSize);
+            if (!strcmp(msgBuffer, inputBuffer))
+            {
+                printf("%d:%d\n", s->line, s->word);
+                ++s->match;
+                notMatch = 0;
+                if (op.o && lastChar != '\n')
+                {
+                    w_skipToNextLine(s);
+                    break;
+                }
+            }
+            if (lastChar == ' ')
+            {
+                incWord(s);
+            }
+            if (lastChar == '\n')
+            {
+                incLine(s);
+            }
+            if (lastChar == EOF)
+            {
+                s->exitcode = 1;
+                free(msgBuffer);
+                free(inputBuffer);
+                return;
+            }
+        }
+        
+    }
+    free(msgBuffer);
+    free(inputBuffer);
+}
+
 Wstats modeWprocess(char* msg, Options op)
 {
-    char* buf = malloc(sizeof(*msg));
+    // char* buf = malloc(sizeof(*msg));
     Wstats stats;
     stats.match = 0;
     stats.line = 1;
@@ -205,7 +315,8 @@ Wstats modeWprocess(char* msg, Options op)
     stats.exitcode = 0;
     
     char* nextWord = msg;
-    readCompare(msg, &stats, op);
+    // readCompare(msg, &stats, op);
+    readCompare2(msg, &stats, op);
     return stats;
 }
 
