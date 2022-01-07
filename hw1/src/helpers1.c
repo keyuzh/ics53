@@ -10,9 +10,28 @@ char getMode(char *argv[])
     return argv[1][1];
 }
 
+char* modeWFormat(char* msg)
+{
+    // printf("%ld\n", strlen(msg));
+    char* result = malloc(strlen(msg));
+    char* org = msg;
+    char* res = result;
+
+    while (*org != 0)
+    {
+        *res = tolower(*org);
+        ++res;
+        ++org;
+    }
+    *res = '\0';
+    
+    printf("MESSAGE:%s\n", result);
+    return result;
+}
+
 char* modeLFormat(char* msg, int s)
 {
-    char* result = malloc(sizeof(*msg));
+    char* result = malloc(strlen(msg));
 
     char* org = msg;
     char* res = result;
@@ -44,10 +63,47 @@ void skipToNextLine()
     }
 }
 
-unsigned int modeLprocess(char* msg, Options op)
+void w_skipToNextLine(Wstats* s)
 {
+    char t;
+    while (1)
+    {
+        t = getchar();
+        if (t == EOF) { return; }
+        if (t == '\n') 
+        {
+            incLine(s);
+            return;
+        }
+    }
+}
+
+void skipToNextWord(Wstats* s)
+{
+    char t;
+    while (1)
+    {
+        t = getchar();
+        switch (t)
+        {
+        case EOF:
+            return;
+        case '\n':
+            incLine(s);
+            return;
+        case ' ':
+            incWord(s);
+            return;
+        }
+    }
+}
+
+Wstats modeLprocess(char* msg, Options op)
+{
+    unsigned int msgLen = strlen(msg);
     char temp;
     unsigned int count = 0;
+    Wstats r;
     while (1)
     {
         temp = tolower(getchar());
@@ -76,48 +132,81 @@ unsigned int modeLprocess(char* msg, Options op)
             printf("%c", temp);
         }
     }
-    return count;
+    r.match = count;
+    r.exitcode = (count != msgLen);
+    return r;
 }
 
-void readNextWord(char* buf)
+void incWord(Wstats* s)
 {
-    int max = sizeof(*buf);
-    int index = 0;
-    char temp;
-    while (index < max)
-    {
-        temp = getchar();
-        if (temp == ' ')
-        {
-            
-        }
-        buf[index] = temp;
-        ++index;
-    }
-    buf[index]
-    
+    ++s->word;
 }
 
-unsigned int modeWprocess(char* msg, Options op)
+void incLine(Wstats* s)
+{
+    ++s->line;
+    s->word = 1;
+}
+
+void readCompare(char* word, Wstats* s, Options op)
+{
+    char* nextWord = word;
+    char* target = nextWord;
+    char temp;
+
+    // while (1)
+    // {
+    //     target = nextWord;
+        while (1)
+        {
+            temp = tolower(getchar());
+            // printf("%c", temp);
+            if (temp == EOF)
+            {
+                s->exitcode = 1; // input end before message
+                return;
+            }
+            if ((*target == ' ' || *target == '\0') 
+                && (temp == ' ' || temp == '\n'))
+            {
+                // match whole word
+                printf("%d:%d\n", s->line, s->word);
+                ++s->match;
+                if (*target == '\0') { return; /* entire message is found */ }
+                nextWord = ++target;
+                if (op.o)
+                {
+                    w_skipToNextLine(s);
+                    continue;
+                }
+                // if (temp == ' ') { incWord(s); }
+                // if (temp == '\n') { incLine(s); }
+                temp == ' ' ? incWord(s) : incLine(s);
+                continue;
+            }
+            if (temp == *target)
+            {
+                ++target;
+                continue;
+            }
+            skipToNextWord(s);
+            target = nextWord;
+        }
+    // }
+}
+
+Wstats modeWprocess(char* msg, Options op)
 {
     char* buf = malloc(sizeof(*msg));
-    unsigned int matchCnt = 0;
-    unsigned int lineCnt = 1;
-    unsigned int wordCnt = 1;
-
+    Wstats stats;
+    stats.match = 0;
+    stats.line = 1;
+    stats.word = 1;
+    stats.exitcode = 0;
+    
     char* nextWord = msg;
-
-    while (1)
-    {
-        int index = 0;
-
-
-        
-    }
-    
-
-
-    
+    readCompare(msg, &stats, op);
+    return stats;
 }
 
 int isModeS(int argc, char* argv[])
@@ -146,4 +235,58 @@ int isModeOther(int argc, char* argv[], const char mode)
         }
     }
     return 0;
+}
+
+void invalid()
+{
+    fprintf(stderr, "%s\n", USAGE_HELPER);
+    exit(-1);
+}
+
+void checkS(int index, int argc, char* argv[])
+{
+    if (index >= argc)
+    {
+        invalid();
+    }
+    for (int i = 0; i < strlen(argv[index]); i++)
+    {
+        if (isdigit(argv[index][i]) == 0)
+        {
+            invalid();
+        }
+    }
+}
+
+
+void checkOptions(Options* opt, int argc, char* argv[])
+{
+    if ((argc < 3) || (strcmp(argv[1], "-L") && strcmp(argv[1], "-W")))
+    { 
+        invalid();
+    }
+
+    opt->mode = getMode(argv);
+    opt->s = opt->o = opt->p = 0;
+
+    for (int i = 3; i < argc; i++)
+    {
+        if (!strcmp(argv[i], "-S"))
+        {
+            checkS(i+1, argc, argv);
+            opt->s = 1;
+            opt->s = atoi(argv[i+1]);
+            ++i;
+        }
+        else if (!strcmp(argv[i], "-O")) { opt->o = 1; }
+        else if (!strcmp(argv[i], "-P")) { opt->p = 1; }
+        else { invalid(); }
+    }
+    
+    if ((opt->mode != 'L' && opt->mode != 'W')
+        || (opt->s && opt->mode != 'L')
+        || (opt->p && opt->mode != 'W'))
+    {
+        invalid();
+    }
 }
