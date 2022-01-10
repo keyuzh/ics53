@@ -223,7 +223,39 @@ void readNextWordInMessage(char** msg, char* buf)
     *buf = '\0';
 }
 
-char readNextWordFromInput(char* buf, Wstats* s, unsigned int bufSz)
+void removeLeadingPunc(char* buf, unsigned int bufSz)
+{
+    unsigned int from = 0;
+    unsigned int to = 0;
+    while ((from < bufSz) && ispunct(buf[from]))
+    {
+        ++from;
+    }
+    if (from == to) { return; }
+    while ((from < bufSz) && (buf[from] != '\0'))
+    {
+        buf[to] = buf[from];
+        ++to;
+        ++from;
+    }
+    buf[to] = '\0';
+}
+
+void removeTrailingPunc(char* buf, unsigned int bufSz)
+{
+    int i = 0;
+    // go to the end of string
+    while (buf[i] != '\0')
+    {
+        ++i;
+    }
+    while ((--i >= 0) && ispunct(buf[i]))
+    {
+        buf[i] = '\0';
+    }
+}
+
+char readNextWordFromInput(char* buf, Wstats* s, unsigned int bufSz, Options op)
 {
     char nextChar;
     unsigned int index = 0;
@@ -232,6 +264,15 @@ char readNextWordFromInput(char* buf, Wstats* s, unsigned int bufSz)
         nextChar = tolower(getchar());
         if (nextChar == '\n') { incLine(s); }
     } while (isspace(nextChar) && nextChar != EOF);
+    if (op.p)
+    {
+        // skip leading punctuation
+        while (ispunct(nextChar))
+        {
+            nextChar = tolower(getchar());
+            if (nextChar == '\n') { incLine(s); }
+        }
+    }
     // copy til space
     do
     {
@@ -240,7 +281,7 @@ char readNextWordFromInput(char* buf, Wstats* s, unsigned int bufSz)
         if (++index >= bufSz)
         {
             // word longer than buffer, impossible to be a match
-            index = 0;
+            index = op.p ? bufSz-1 : 0;
             // skip til space
             while (!isspace(nextChar) && nextChar != EOF)
             {
@@ -256,13 +297,18 @@ char readNextWordFromInput(char* buf, Wstats* s, unsigned int bufSz)
 
 void readCompare2(char* msg, Wstats* s, Options op)
 {
-    char* msgBuffer = malloc(strlen(msg) + 1);
     unsigned int inputBufferSize = strlen(msg) + 1;
+    char* msgBuffer = malloc(inputBufferSize);
     char* inputBuffer = malloc(inputBufferSize);
 
     while (1)
     {
         readNextWordInMessage(&msg, msgBuffer);
+        if (op.p)
+        {
+            removeLeadingPunc(msgBuffer, inputBufferSize);
+            removeTrailingPunc(msgBuffer, inputBufferSize);
+        }
         if (*msgBuffer == '\0')
         {
             break;
@@ -271,7 +317,8 @@ void readCompare2(char* msg, Wstats* s, Options op)
         // Wstats sCopy = *s;
         while (notMatch)
         {
-            char lastChar = readNextWordFromInput(inputBuffer, s, inputBufferSize);
+            char lastChar = readNextWordFromInput(inputBuffer, s, inputBufferSize, op);
+            if (op.p) { removeTrailingPunc(inputBuffer, inputBufferSize); }
             if (!strcmp(msgBuffer, inputBuffer))
             {
                 printf("%d:%d\n", s->line, s->word);

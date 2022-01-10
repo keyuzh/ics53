@@ -41,4 +41,6 @@ Wstats modeWprocess(char* msg, Options op);
 
 void checkOptions(Options* opt, int argc, char* argv[]);
 
+void removeLeadingPunc(char* buf, unsigned int bufSz);
+
 # endif
