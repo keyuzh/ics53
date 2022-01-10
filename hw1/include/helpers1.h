@@ -14,33 +14,35 @@ typedef struct
 {
     unsigned int match, line, word;
     int exitcode;
-} Wstats;
-
-// typedef struct
-// {
-//     unsigned int numHidden;
-//     int exitcode;
-// } Result;
-
+} Stats;
 
 char getMode(char *argv[]);
 
 char* modeWFormat(char* msg);
 char* modeLFormat(char* msg, int s);
 
-Wstats modeLprocess(char* msg, Options op);
+void skipToNextLine();
+void w_skipToNextLine(Stats* s);
+void skipToNextWord(Stats* s);
 
-int isModeS(int argc, char* argv[]);
+Stats modeLprocess(char* msg, Options op);
 
-int isModeOther(int argc, char* argv[], const char mode);
+void incWord(Stats* s);
+void incLine(Stats* s);
 
-void incWord(Wstats* s);
-void incLine(Wstats* s);
-
-Wstats modeWprocess(char* msg, Options op);
-
-void checkOptions(Options* opt, int argc, char* argv[]);
+void readNextWordInMessage(char** msg, char* buf);
 
 void removeLeadingPunc(char* buf, unsigned int bufSz);
+void removeTrailingPunc(char* buf, unsigned int bufSz);
+
+char readNextWordFromInput(char* buf, Stats* s, unsigned int bufSz, Options op);
+
+void readCompare(char* msg, Stats* s, Options op);
+
+Stats modeWprocess(char* msg, Options op);
+
+void invalid();
+void checkS(int index, int argc, char* argv[]);
+void checkOptions(Options* opt, int argc, char* argv[]);
 
 # endif
