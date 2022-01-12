@@ -35,7 +35,7 @@ int main(void) {
 
 
     printf("\n****Compare Dates*****\n");
-    Date  f = {1,1,2022};   // f is initialized
+    Date  f = {4,20,1980};   // f is initialized
 
     success = cmpDate(d, f);
 
