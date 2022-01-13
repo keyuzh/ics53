@@ -56,7 +56,18 @@ int cmpDate(const Date date1, const Date date2) {
 
 // Part 2 Functions to implement
 int genreComparator(void* str1, void* str2) {
-    return -999;
+    char* c1 = str1;
+    char* c2 = str2;
+    while (*c1 != 0 && *c2 != 0)
+    {
+        if (*c1 != *c2)
+        {
+            return *c1 > *c2 ? 1 : -1;
+        }
+        ++c1;
+        ++c2;
+    }
+    return 0;
 }
 
 void genrePrinter(void* data, void* fp, int flag) {
