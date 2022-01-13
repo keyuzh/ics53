@@ -58,7 +58,7 @@ int cmpDate(const Date date1, const Date date2) {
 int genreComparator(void* str1, void* str2) {
     char* c1 = str1;
     char* c2 = str2;
-    while (*c1 != 0 && *c2 != 0)
+    while (*c1 != '\0' || *c2 != '\0')
     {
         if (*c1 != *c2)
         {

@@ -13,12 +13,18 @@ int main() {
     char* str5 = calloc(5,1);  // 5 bytes of space initialized to 0
     strcpy(str5,str4);         // String.h funcitions are not allowed in your HW implemention!! Create your own versions with pointers
 
+    char* str6 = "Self";
+
     printf("\n******Compare Tests******\n");    
     printf("Mystery vs Classic, genreCompartor returns %d\n", genreComparator(str1, str2));
     printf("Classic vs Mystery, genreCompartor returns %d\n", genreComparator(str2, str1));
     printf("Classic vs Classic, genreCompartor returns %d\n", genreComparator(str2, str2));
-    printf("Self Help vs Self, genreCompartor returns %d\n", genreComparator(str3, str5));
+    printf("Self Help vs Self, genreCompartor returns %d\n", genreComparator(str3, str6));
 
+    printf("Mystery vs Classic, strcmp returns %d\n", strcmp(str1, str2));
+    printf("Classic vs Mystery, strcmp returns %d\n", strcmp(str2, str1));
+    printf("Classic vs Classic, strcmp returns %d\n", strcmp(str2, str2));
+    printf("Self Help vs Self,  strcmp returns %d\n", strcmp(str3, str6));
 
 
     printf("\n\n******Deleter Test******\n");
