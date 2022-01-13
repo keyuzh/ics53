@@ -41,10 +41,10 @@ int main(void) {
 
     if(success < 0)
         printf("Date d is before Date f\n");
-    else if (success)
-        printf("Date d is the same as Date f\n");
-    else
+    else if (success > 0)
         printf("Date d is after Date f\n");
+    else
+        printf("Date d is the same as Date f\n");
 
     return 0;
 }
