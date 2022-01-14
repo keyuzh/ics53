@@ -71,24 +71,75 @@ int genreComparator(void* str1, void* str2) {
 }
 
 void genrePrinter(void* data, void* fp, int flag) {
-
+    if (flag)
+    { // pretty print
+        fprintf(fp, "%s | ", (char*)data); 
+    }
+    else 
+    { // debug print
+        fprintf(fp, "%s ", (char*)data); 
+    }
 }
 
 void genreDeleter(void* data) {
-
+    // free() can handle nullptr
+    free(data);
+    data = NULL;
 }
 
 list_t* getGenres(char* str) {
-    return NULL;
+    if (str == NULL || *str == '\0')
+    {
+        // nullptr OR empty string
+        return NULL;
+    }
+    list_t* ll = CreateList(genreComparator, genrePrinter, genreDeleter);
+    char* ptr = str;
+    while (ptr != NULL)
+    {
+        GenreGetter gg = getNextGenre(ptr);
+        if (gg.current == NULL)
+        {
+            // empty genre
+            DestroyList(&ll);
+            return NULL;
+        }
+        InsertInOrder(ll, gg.current);
+        ptr = gg.next;
+    }
+    return ll;
 }
 
 // Part 2 Generic Linked List functions
 node_t* FindInList(list_t* list, void* token) {
+    if (list == NULL || token == NULL)
+    {
+        return NULL;
+    }
+    node_t* ptr = list->head;
+    while (ptr != NULL)
+    {
+        if (!(list->comparator(ptr->data, token)))
+        {
+            return ptr;
+        }
+        ptr = ptr->next;
+    }
     return NULL;
 }
 
 void DestroyList(list_t** list)  {
-
+    node_t* toDelete;
+    node_t* ptr = (*list)->head;
+    while (ptr != NULL)
+    {
+        (*list)->deleter(ptr->data);
+        toDelete = ptr;
+        ptr = ptr->next;
+        free(toDelete);
+    }
+    free(*list);
+    *list = NULL;
 }
 
 

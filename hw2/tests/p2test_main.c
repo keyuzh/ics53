@@ -11,7 +11,7 @@ int main() {
     char str4[4] = "Self Help";    // Array with size, truncated initialization (no null terminator!) DON'T USE THIS AS A STRING!!!
 
     char* str5 = calloc(5,1);  // 5 bytes of space initialized to 0
-    strcpy(str5,str4);         // String.h funcitions are not allowed in your HW implemention!! Create your own versions with pointers
+    // strcpy(str5,str4);         // String.h funcitions are not allowed in your HW implemention!! Create your own versions with pointers
 
     char* str6 = "Self";
 

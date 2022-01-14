@@ -1,5 +1,6 @@
 // Define all helper functions for hw2 in this file
 #include "helpers2.h"
+#include <stdlib.h>
 
 // checks whether a str is a valid date format
 // format: mm/dd/yyyy
@@ -47,4 +48,48 @@ int dateRangeCheck(char* str)
 int dateCheck(char* str) 
 {
     return (dateFormatCheck(str) && dateRangeCheck(str));
+}
+
+int getGenreLength(char* str)
+{
+    int len = 0;
+    while (*str != '\n' && *str != '|' && *str != '\0')
+    {
+        ++len;
+        ++str;
+    }
+    return len;
+}
+
+void copyGenre(GenreGetter* gg, char* src)
+{
+    char* dest = gg->current;
+    while (*src != '\n' && *src != '|')
+    {
+        *dest = *src;
+        ++dest;
+        ++src;
+    }
+    if (*src == '\n')
+    {
+        gg->next = NULL;
+    }
+    else 
+    {
+        gg->next = ++src;
+    }
+}
+
+GenreGetter getNextGenre(char* str)
+{
+    GenreGetter gg;
+    int len = getGenreLength(str);
+    if (len == 0)
+    {
+        gg.current = NULL;
+        return gg;
+    }
+    gg.current = malloc(len + 1);
+    copyGenre(&gg, str);
+    return gg;
 }
