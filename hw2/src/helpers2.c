@@ -144,7 +144,7 @@ char* getNextField(char** org)
 char* joinNames(char* first, char* last)
 {
     char end = '\0';
-    char* result = malloc(my_strlen(first, end) + my_strlen(last, end) + 2);
+    char* result = malloc(my_strlen(first, end) + my_strlen(last, end) + 3);
     char* dest = result;
     // copy last name
     while (*last != '\0')
@@ -154,6 +154,7 @@ char* joinNames(char* first, char* last)
         ++last;
     }
     *(dest++) = ',';
+    *(dest++) = ' ';
     while (*first != '\0')
     {
         *dest = *first;
@@ -162,4 +163,126 @@ char* joinNames(char* first, char* last)
     }
     *dest = '\0';
     return result;
+}
+
+char* getLastName(char* str, char** end_str)
+{
+    char end = ',';
+    // extract last name from the string
+    int len = my_strlen(str, end);
+    char* lastName = malloc(len + 1);
+
+    char* to = lastName;
+    int betweenQuotes = 0;
+    while (*str != end || betweenQuotes)
+    {
+        if (*str == '"')
+        {
+            betweenQuotes = 1 - betweenQuotes;
+        }
+        *to = *str;
+        ++to;
+        ++str;
+    }
+    *to = '\0';
+    *end_str = str+2;
+    return lastName;
+}
+
+char* getFirstName(char* str)
+{
+    char end = '\0';
+    // extract first name from the string
+    int len = my_strlen(str, end);
+    char* name = malloc(len + 1);
+
+    char* to = name;
+    int betweenQuotes = 0;
+    while (*str != end || betweenQuotes)
+    {
+        if (*str == '"')
+        {
+            betweenQuotes = 1 - betweenQuotes;
+        }
+        *to = *str;
+        ++to;
+        ++str;
+    }
+    *to = '\0';
+    return name;
+}
+
+int searchName(char* str, char* criterion)
+{
+    char* firstNameSubstring;
+    char* lastName = getLastName(str, &firstNameSubstring);
+    char* firstName = getFirstName(firstNameSubstring);
+    int matchLastName = strFullMatch(lastName, criterion);
+    int matchFirstName = strFullMatch(firstName, criterion);
+    int result = matchFirstName + matchLastName;
+    free(lastName);
+    free(firstName);
+    return result;
+}
+
+int strFullMatch(char* left, char* right)
+{
+    while (*left != '\0' || *right != '\0')
+    {
+        if (*left != *right)
+        {
+            return 0;
+        }
+        ++left;
+        ++right;
+    }
+    return 1;
+}
+
+int strStartswith(char* str, char* prefix)
+{
+    while (*prefix != 0)
+    {
+        if (*str != *prefix)
+        {
+            return 0;
+        }
+        ++str;
+        ++prefix;
+    }
+    return 1;
+}
+
+int strSubstringMatch(char* toSearch, char* subString)
+{
+    while (*toSearch != '\0')
+    {
+        if (strStartswith(toSearch, subString))
+        {
+            return 1;
+        }
+        ++toSearch;
+    }
+    return 0;
+}
+
+int compareDates(int year1, int month1, int day1, int year2, int month2, int day2)
+{
+    // return 1 if date 1 is on or after date 2
+    if (year1 > year2)
+    {
+        return 1;
+    }
+    else if (year1 == year2)
+    {
+        if (month1 > month2)
+        {
+            return 1;
+        }
+        else if (month1 == month2)
+        {
+            return (day1 >= day2);
+        }
+    }
+    return 0;
 }

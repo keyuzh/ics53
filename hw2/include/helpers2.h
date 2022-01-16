@@ -20,4 +20,13 @@ void my_strcpy(char* dest, char** src, int length);
 char* getNextField(char** org);
 char* joinNames(char* first, char* last);
 
+char* getLastName(char* str, char** end_str);
+char* getFirstName(char* str);
+int searchName(char* str, char* criterion);
+int strFullMatch(char* left, char* right);
+int strStartswith(char* str, char* prefix);
+int strSubstringMatch(char* toSearch, char* subString);
+int compareDates(int year1, int month1, int day1, int year2, int month2, int day2);
+
+
 #endif

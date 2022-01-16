@@ -246,8 +246,40 @@ book_t* createBook(char* line) {
 
 // Part 4 Functions to implement
 int bookMatch(book_t* curBook, search_t* criterion) {
-    return -999;
+    if (curBook == NULL || criterion == NULL) { return -1; }
+    int match = 0;
+    if (criterion->name != NULL)
+    {
+        match += searchName(curBook->name, criterion->name);
+    }
+    if (criterion->keyword != NULL)
+    {
+        match += strSubstringMatch(curBook->name, criterion->keyword);
+        match += strSubstringMatch(curBook->title, criterion->keyword);
+    }
+    if (criterion->ISBN)
+    {
+        match += (curBook->ISBN == criterion->ISBN);
+    }
+    if (criterion->pubDate.day != 0 && criterion->pubDate.month != 0 && criterion->pubDate.year != 0)
+    {
+        match += (cmpDate(criterion->pubDate, curBook->pubDate) >= 0);
+    }
+    if (criterion->genre != NULL)
+    {
+        match += (FindInList(curBook->genres, criterion->genre) != NULL);
+    }
+    return (match > 0);
 }
 
 void PrintNLinkedList(list_t* list, FILE* fp, int NUM) {
+    if (NUM < 0 || list == NULL) { return; }
+    node_t* ptr = list->head;
+    int numPrinted = 0;
+    while (ptr != NULL && (NUM == 0 || numPrinted < NUM))
+    {
+        list->printer(ptr->data, fp, 1);
+        ptr = ptr->next;
+        ++numPrinted;
+    }
 }
