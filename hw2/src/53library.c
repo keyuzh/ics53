@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
 				G_flag = 1;
 				criterion.genre = optarg;
                 break;
-            case 'O':
+            case 'N':
 				N_flag = 1;
 				criterion.name = optarg;
                 break;

@@ -70,6 +70,7 @@ void copyGenre(GenreGetter* gg, char* src)
         ++dest;
         ++src;
     }
+    *dest = '\0';
     if (*src == '\n')
     {
         gg->next = NULL;
@@ -80,16 +81,85 @@ void copyGenre(GenreGetter* gg, char* src)
     }
 }
 
-GenreGetter getNextGenre(char* str)
+GenreGetter* getNextGenre(char* str)
 {
-    GenreGetter gg;
+    GenreGetter* gg = malloc(sizeof(GenreGetter));
     int len = getGenreLength(str);
     if (len == 0)
     {
-        gg.current = NULL;
+        gg->current = NULL;
         return gg;
     }
-    gg.current = malloc(len + 1);
-    copyGenre(&gg, str);
+    gg->current = malloc(len+1);
+    copyGenre(gg, str);
     return gg;
+}
+
+int my_strlen(char* str, char end)
+{
+    int len = 0;
+    int betweenQuotes = 0;
+    while (*str != end || betweenQuotes)
+    {
+        if (*str == '"')
+        {
+            betweenQuotes = 1 - betweenQuotes;
+        }
+        ++len;
+        ++str;
+    }
+    return len;
+}
+
+void my_strcpy(char* dest, char** src, int length)
+{
+    // copy the next input field for the given length, move the src pointer to the
+    // start of next input field
+    char* read = *src;
+    for (int i = 0; i < length; i++)
+    {
+        *dest = *read;
+        ++dest;
+        ++read;
+    }
+    *dest = '\0';
+    *src = ++read;
+}
+
+char* getNextField(char** org)
+{
+    if (org == NULL || *org == NULL) { return NULL; }
+    int nextFieldLength = my_strlen(*org, ',');
+    char* str = malloc(nextFieldLength + 1);
+    my_strcpy(str, org, nextFieldLength);
+    if (*str == '\0')
+    {
+        free(str);
+        *org = NULL;
+        return NULL;
+    }
+    return str;
+}
+
+char* joinNames(char* first, char* last)
+{
+    char end = '\0';
+    char* result = malloc(my_strlen(first, end) + my_strlen(last, end) + 2);
+    char* dest = result;
+    // copy last name
+    while (*last != '\0')
+    {
+        *dest = *last;
+        ++dest;
+        ++last;
+    }
+    *(dest++) = ',';
+    while (*first != '\0')
+    {
+        *dest = *first;
+        ++dest;
+        ++first;
+    }
+    *dest = '\0';
+    return result;
 }

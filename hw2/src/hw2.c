@@ -73,18 +73,18 @@ int genreComparator(void* str1, void* str2) {
 void genrePrinter(void* data, void* fp, int flag) {
     if (flag)
     { // pretty print
-        fprintf(fp, "%s | ", (char*)data); 
+        fprintf(fp, "%s,", (char*)data); 
     }
     else 
     { // debug print
-        fprintf(fp, "%s ", (char*)data); 
+        fprintf(fp, "%s", (char*)data); 
     }
 }
 
 void genreDeleter(void* data) {
     // free() can handle nullptr
     free(data);
-    data = NULL;
+    data = NULL; // how to make original ptr NULL ??
 }
 
 list_t* getGenres(char* str) {
@@ -97,15 +97,17 @@ list_t* getGenres(char* str) {
     char* ptr = str;
     while (ptr != NULL)
     {
-        GenreGetter gg = getNextGenre(ptr);
-        if (gg.current == NULL)
+        GenreGetter* gg = getNextGenre(ptr);
+        if (gg->current == NULL)
         {
             // empty genre
             DestroyList(&ll);
+            free(gg);
             return NULL;
         }
-        InsertInOrder(ll, gg.current);
-        ptr = gg.next;
+        InsertInOrder(ll, gg->current);
+        ptr = gg->next;
+        free(gg);
     }
     return ll;
 }
@@ -129,6 +131,10 @@ node_t* FindInList(list_t* list, void* token) {
 }
 
 void DestroyList(list_t** list)  {
+    if (list == NULL || *list == NULL) 
+    {
+        return;
+    }
     node_t* toDelete;
     node_t* ptr = (*list)->head;
     while (ptr != NULL)
@@ -147,23 +153,92 @@ void DestroyList(list_t** list)  {
 
 // Part 3 Functions to implement
 void book_tPrinter(void* data, void *fp, int flag) {
- 
+    if (data == NULL) { return; }
+    book_t* book = data;
+    if (flag)
+    {
+        // pretty print
+        // prints ISBN, month, day
+        fprintf(fp, "%u\t%02d\t%02d\t", book->ISBN, book->pubDate.month, book->pubDate.day);
+    }
+    fprintf(fp, "%04d\t%s\t", book->pubDate.year, book->name);
+    if (flag)
+    {
+        // no quotation marks
+        fprintf(fp, "%s\t", book->title);
+    }
+    else
+    {
+        fprintf(fp, "\"%s\"\t", book->title);
+    }
+    // print genres
+    list_t* genres = book->genres;
+    node_t* ptr = genres->head;
+    while (ptr != NULL) {
+        genrePrinter(ptr->data, fp, 0);
+        ptr = ptr->next;
+        if (ptr != NULL) { fprintf(fp, ","); }
+    }
+    fprintf(fp, "\n");
 }
 
 int book_tISBNAscComparator(void* lhs, void* rhs) {
-    return -999;
+    unsigned int left = ((book_t*)lhs)->ISBN;
+    unsigned int right = ((book_t*)rhs)->ISBN;
+    if (left == right)
+    {
+        return 0;
+    }
+    return (left > right) ? 1 : -1;
 }
 
 int book_tISBNDescComparator(void* lhs, void* rhs) {
-    return -999;
+    return -1 * book_tISBNAscComparator(lhs, rhs);
 }
 
 void book_tDeleter(void* data) {
-
+    book_t* book = data;
+    free(book->name);
+    free(book->title);
+    DestroyList(&(book->genres));
+    free(book);
 }
 
 book_t* createBook(char* line) {
-    return NULL;
+    char *bookTitle, *bookISBNstr, *bookFirstName, *bookLastName, *bookPublishDate;
+    bookTitle = bookISBNstr = bookFirstName = bookLastName = bookPublishDate = NULL;
+    // TODO: error handling when the input didn't have enough fields
+    if (line == NULL) { return NULL; }
+    char* reader = line;
+    book_t* book = malloc(sizeof(book_t));
+
+    bookTitle = getNextField(&reader);
+    bookISBNstr = getNextField(&reader);
+    bookFirstName = getNextField(&reader);
+    bookLastName = getNextField(&reader);
+    bookPublishDate = getNextField(&reader);
+    list_t* genres = getGenres(reader);
+    if ((getDate(bookPublishDate, &(book->pubDate)) == 0)
+        || (genres == NULL) || (bookTitle == NULL) || (bookISBNstr == NULL) 
+        || (bookFirstName == NULL) || (bookLastName == NULL))
+    {
+        DestroyList(&genres);
+        free(bookTitle);
+        free(book);
+        book = NULL;
+    }
+    else
+    {
+        book->name = joinNames(bookFirstName, bookLastName);
+        book->title = bookTitle;
+        book->ISBN = atoi(bookISBNstr);
+        book->genres = genres;
+    }
+    free(bookISBNstr);
+    free(bookFirstName);
+    free(bookLastName);
+    free(bookPublishDate);
+    return book;
 }
 
 

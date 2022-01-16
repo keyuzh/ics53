@@ -97,6 +97,37 @@ int main() {
 
     // Check Valgrind! All memory should be free!
 
+    printf("\n***Part 3***\n");
+    char* goodbook1 = "The Complete Works of William Shakespeare,185326895,William,Shakespeare,08/04/1997,Drama|Fiction|Classic\n";
+    char* goodbook2 = "Think Like a Programmer,1593274246,V.,Anton Spraul,08/12/2012,Tech Help|Textbook\n";
+    char* goodbook3 = "\"Linear Algebra: Theory, Intuition, Code\",9083136604,Mike,Cohen,02/01/2021,Textbook\n";
+
+    char* badbook1str = "The Complete Works of William Shakespeare,185326895,William,Shakespeare,08/04/2222,Drama|Fiction|Classic\n";
+    char* badbook2str = "The Complete Works of William Shakespeare,,William,Shakespeare,08/04/1997,Drama|Fiction|Classic\n";
+    char* badbook3str = "The Complete Works of William Shakespeare,185326895,William,Shakespeare,08/04/1997,Drama||Classic\n";
+
+    book_t* book1 = createBook(goodbook1);
+    book_t* book2 = createBook(goodbook2);
+    book_t* book3 = createBook(goodbook3);
+    book_tPrinter(book1, stdout, 1);
+    book_tPrinter(book2, stdout, 1);
+    book_tPrinter(book3, stdout, 1);
+
+    book_tDeleter(book1);
+    book_tDeleter(book2);
+    book_tDeleter(book3);
+
+    book_t* badbook1 = createBook(badbook1str);
+    book_t* badbook2 = createBook(badbook2str);
+    book_t* badbook3 = createBook(badbook3str);
+    if (badbook1 != NULL) printf("OOPS");
+    else printf("badbook1 are NULL\n");
+    if (badbook2 != NULL) printf("OOPS");
+    else printf("badbook2 are NULL\n");
+    if (badbook3 != NULL) printf("OOPS");
+    else printf("badbook3 are NULL\n");
+    
+
     printf("\n******END OF TEST******\n");
 
     return 0;
