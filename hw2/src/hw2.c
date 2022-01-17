@@ -97,17 +97,17 @@ list_t* getGenres(char* str) {
     char* ptr = str;
     while (ptr != NULL)
     {
-        GenreGetter* gg = getNextGenre(ptr);
-        if (gg->current == NULL)
+        GenreGetter gg = getNextGenre(ptr);
+        if (gg.current == NULL)
         {
             // empty genre
             DestroyList(&ll);
-            free(gg);
+            // free(gg);
             return NULL;
         }
-        InsertInOrder(ll, gg->current);
-        ptr = gg->next;
-        free(gg);
+        InsertInOrder(ll, gg.current);
+        ptr = gg.next;
+        // free(gg);
     }
     return ll;
 }
@@ -263,7 +263,7 @@ int bookMatch(book_t* curBook, search_t* criterion) {
     }
     if (criterion->pubDate.day != 0 && criterion->pubDate.month != 0 && criterion->pubDate.year != 0)
     {
-        match += (cmpDate(criterion->pubDate, curBook->pubDate) >= 0);
+        match += (cmpDate(criterion->pubDate, curBook->pubDate) <= 0);
     }
     if (criterion->genre != NULL)
     {

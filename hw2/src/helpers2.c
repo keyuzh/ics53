@@ -64,13 +64,13 @@ int getGenreLength(char* str)
 void copyGenre(GenreGetter* gg, char* src)
 {
     char* dest = gg->current;
-    while (*src != '\n' && *src != '|')
+    while (*src != '\n' && *src != '|' && *src != '\0')
     {
         *dest = *src;
         ++dest;
         ++src;
     }
-    *dest = '\0';
+    // *dest = '\0';
     if (*src == '\n')
     {
         gg->next = NULL;
@@ -81,17 +81,18 @@ void copyGenre(GenreGetter* gg, char* src)
     }
 }
 
-GenreGetter* getNextGenre(char* str)
+GenreGetter getNextGenre(char* str)
 {
-    GenreGetter* gg = malloc(sizeof(GenreGetter));
+    // GenreGetter* gg = malloc(sizeof(GenreGetter));
+    GenreGetter gg;
     int len = getGenreLength(str);
     if (len == 0)
     {
-        gg->current = NULL;
+        gg.current = NULL;
         return gg;
     }
-    gg->current = malloc(len+1);
-    copyGenre(gg, str);
+    gg.current = calloc(len+1, sizeof(char));
+    copyGenre(&gg, str);
     return gg;
 }
 

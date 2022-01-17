@@ -68,6 +68,72 @@ int main(int argc, char* argv[]) {
     // INSERT YOUR IMPLEMENTATION HERE
     // getopts only stored the arguments and performed basic checks. More error checking is still needed!!!!
 
+    void* comparer = NULL;
+    switch (ORDER_arg)
+    {
+    case 'a':
+        comparer = &book_tISBNAscComparator;
+        break;
+    case 'd':
+        comparer = &book_tISBNDescComparator;
+        break;
+    default:
+        break;
+    }
 
+    list_t* library = CreateList(comparer, &book_tPrinter, &book_tDeleter);
+    char* buf = NULL;
+    size_t bufSz = 0;
+    // read csv
+    while (getline(&buf, &bufSz, stdin) > 0)
+    {
+        printf("READING %s\n", buf);
+        book_t* nextBook = createBook(buf);
+        if (nextBook == NULL)
+        {
+            exit(2);
+        }
+        if (ORDER_arg == 'n')
+        {
+            InsertAtTail(library, nextBook);
+        }
+        else
+        {
+            InsertInOrder(library, nextBook);
+        }
+    }
+    free(buf);
+
+    FILE* out;
+    if (OUTFILE != NULL)
+    {
+        out = fopen(OUTFILE, "w");
+        if (out == NULL)
+        {
+            exit(3);
+        }
+    }
+    else
+    {
+        out = stdout;
+    }
+
+    printf("END READING\n");
+    // iterate through the linked list and search book
+    node_t* ptr = library->head;
+    while (ptr != NULL)
+    {
+        //debug print
+        // printf("Searching: ");
+        // library->printer(ptr->data, stdout, 1);
+
+        if (bookMatch(ptr->data, &criterion))
+        {
+            library->printer(ptr->data, out, 0);
+        }
+        ptr = ptr->next;
+    }
+
+    fclose(out);
     return 0;
 }

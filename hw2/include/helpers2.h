@@ -13,7 +13,7 @@ int dateFormatCheck(char* str);
 int dateRangeCheck(char* str);
 int dateCheck(char* str);
 
-GenreGetter* getNextGenre(char* str);
+GenreGetter getNextGenre(char* str);
 
 int my_strlen(char* str, const char end);
 void my_strcpy(char* dest, char** src, int length);
