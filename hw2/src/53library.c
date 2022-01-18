@@ -87,7 +87,7 @@ int main(int argc, char* argv[]) {
     // read csv
     while (getline(&buf, &bufSz, stdin) > 0)
     {
-        printf("READING %s\n", buf);
+        // printf("READING %s\n", buf);
         book_t* nextBook = createBook(buf);
         if (nextBook == NULL)
         {
@@ -118,7 +118,7 @@ int main(int argc, char* argv[]) {
         out = stdout;
     }
 
-    printf("END READING\n");
+    // printf("END READING\n");
     // iterate through the linked list and search book
     node_t* ptr = library->head;
     while (ptr != NULL)
@@ -126,13 +126,14 @@ int main(int argc, char* argv[]) {
         //debug print
         // printf("Searching: ");
         // library->printer(ptr->data, stdout, 1);
-
         if (bookMatch(ptr->data, &criterion))
         {
             library->printer(ptr->data, out, 0);
         }
         ptr = ptr->next;
     }
+
+    DestroyList(&library);
 
     fclose(out);
     return 0;

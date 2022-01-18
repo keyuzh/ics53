@@ -27,6 +27,7 @@ int strFullMatch(char* left, char* right);
 int strStartswith(char* str, char* prefix);
 int strSubstringMatch(char* toSearch, char* subString);
 int compareDates(int year1, int month1, int day1, int year2, int month2, int day2);
+void printTitle(char* title, void* fp, int flag);
 
 
 #endif

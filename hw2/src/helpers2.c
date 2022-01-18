@@ -1,6 +1,7 @@
 // Define all helper functions for hw2 in this file
 #include "helpers2.h"
-#include <stdlib.h>
+#include "hw2.h"
+// #include <stdlib.h>
 
 // checks whether a str is a valid date format
 // format: mm/dd/yyyy
@@ -71,7 +72,7 @@ void copyGenre(GenreGetter* gg, char* src)
         ++src;
     }
     // *dest = '\0';
-    if (*src == '\n')
+    if (*src == '\n' || *src == '\0')
     {
         gg->next = NULL;
     }
@@ -286,4 +287,33 @@ int compareDates(int year1, int month1, int day1, int year2, int month2, int day
         }
     }
     return 0;
+}
+
+void printTitle(char* title, void* fp, int flag)
+{
+    // print the title of book without quotation marks
+    int hasQuotes = strStartswith(title, "\"");
+    // flag == 0, hasQuotes == 0  -> add quotes
+    // flag == 0, hasQuotes == 1  -> dont add quotes
+    // flag == 1, hasQuotes == 0  -> dont add quotes
+    // flag == 1, hasQuotes == 1  -> remove quotes
+    // printf("\nflag: %d, hasQuotes: %d\n", flag, hasQuotes);
+    // printf("title: %s\n", title);
+    if (flag && hasQuotes)
+    {
+        char* ptr = ++title;
+        while (*ptr != '"')
+        {
+            fprintf(fp, "%c", *ptr);
+            ++ptr;
+        }
+    }
+    else if (flag || hasQuotes)
+    {
+        fprintf(fp, "%s\t", title);
+    }
+    else
+    {
+        fprintf(fp, "\"%s\"\t", title);
+    }
 }

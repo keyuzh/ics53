@@ -162,15 +162,7 @@ void book_tPrinter(void* data, void *fp, int flag) {
         fprintf(fp, "%u\t%02d\t%02d\t", book->ISBN, book->pubDate.month, book->pubDate.day);
     }
     fprintf(fp, "%04d\t%s\t", book->pubDate.year, book->name);
-    if (flag)
-    {
-        // no quotation marks
-        fprintf(fp, "%s\t", book->title);
-    }
-    else
-    {
-        fprintf(fp, "\"%s\"\t", book->title);
-    }
+    printTitle(book->title, fp, flag);
     // print genres
     list_t* genres = book->genres;
     node_t* ptr = genres->head;
