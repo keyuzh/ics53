@@ -3,6 +3,7 @@
 #include "hw2.h"
 
 int main(int argc, char* argv[]) {
+    errno = 4;
     search_t criterion = {NULL, NULL, 0, {0,0,0}, NULL};
 
 	int I_flag = 0;
@@ -11,6 +12,7 @@ int main(int argc, char* argv[]) {
 	int N_flag = 0;
 	int K_flag = 0;
     int NUM_arg = 0;
+    int NUM_flag = 0;
     char ORDER_arg = 'n';   // default no order
     char* OUTFILE = NULL;
 
@@ -24,8 +26,10 @@ int main(int argc, char* argv[]) {
 				break;
             case 'D':
         	    D_flag = 1;
-				if(!getDate(optarg,&criterion.pubDate))
+				if(!getDate(optarg,&criterion.pubDate)) {
+                    fprintf(stdout, USAGE_MSG "\n");
                     return EXIT_FAILURE;
+                }
                 break;
             case 'G':
 				G_flag = 1;
@@ -43,6 +47,7 @@ int main(int argc, char* argv[]) {
 				fprintf(stdout, USAGE_MSG);
 				return EXIT_SUCCESS;
             case 'n':
+                NUM_flag = 1;
 				NUM_arg = atoi(optarg);
                 break;
             case 'o':
@@ -67,6 +72,13 @@ int main(int argc, char* argv[]) {
     
     // INSERT YOUR IMPLEMENTATION HERE
     // getopts only stored the arguments and performed basic checks. More error checking is still needed!!!!
+    if ((I_flag && criterion.ISBN == 0) || (NUM_flag && NUM_arg == 0))
+    {
+        // invalid number
+        fprintf(stdout, USAGE_MSG "\n");
+        exit(1);
+    }
+    
 
     void* comparer = NULL;
     switch (ORDER_arg)
@@ -132,9 +144,9 @@ int main(int argc, char* argv[]) {
         }
         ptr = ptr->next;
     }
-
+    // clean up
     DestroyList(&library);
-
     fclose(out);
-    return 0;
+    errno = 0;
+    exit(EXIT_SUCCESS);
 }

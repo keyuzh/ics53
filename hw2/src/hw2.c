@@ -71,14 +71,14 @@ int genreComparator(void* str1, void* str2) {
 }
 
 void genrePrinter(void* data, void* fp, int flag) {
-    if (flag)
-    { // pretty print
-        fprintf(fp, "%s,", (char*)data); 
-    }
-    else 
-    { // debug print
+    // if (flag)
+    // { // pretty print
+    //     fprintf(fp, "%s,", (char*)data); 
+    // }
+    // else 
+    // { // debug print
         fprintf(fp, "%s", (char*)data); 
-    }
+    // }
 }
 
 void genreDeleter(void* data) {
@@ -239,27 +239,29 @@ book_t* createBook(char* line) {
 // Part 4 Functions to implement
 int bookMatch(book_t* curBook, search_t* criterion) {
     if (curBook == NULL || criterion == NULL) { return -1; }
-    int match = 0;
+    // use multiplication for multi cateria match
+    int match = 1;
     if (criterion->name != NULL)
     {
-        match += searchName(curBook->name, criterion->name);
+        match *= searchName(curBook->name, criterion->name);
     }
     if (criterion->keyword != NULL)
     {
-        match += strSubstringMatch(curBook->name, criterion->keyword);
-        match += strSubstringMatch(curBook->title, criterion->keyword);
+        match *= (
+            strSubstringMatch(curBook->name, criterion->keyword) 
+            || strSubstringMatch(curBook->title, criterion->keyword));
     }
     if (criterion->ISBN)
     {
-        match += (curBook->ISBN == criterion->ISBN);
+        match *= (curBook->ISBN == criterion->ISBN);
     }
     if (criterion->pubDate.day != 0 && criterion->pubDate.month != 0 && criterion->pubDate.year != 0)
     {
-        match += (cmpDate(criterion->pubDate, curBook->pubDate) <= 0);
+        match *= (cmpDate(criterion->pubDate, curBook->pubDate) <= 0);
     }
     if (criterion->genre != NULL)
     {
-        match += (FindInList(curBook->genres, criterion->genre) != NULL);
+        match *= (FindInList(curBook->genres, criterion->genre) != NULL);
     }
     return (match > 0);
 }
