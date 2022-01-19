@@ -293,14 +293,15 @@ void printTitle(char* title, void* fp, int flag)
 {
     // print the title of book without quotation marks
     int hasQuotes = strStartswith(title, "\"");
-    // flag == 0, hasQuotes == 0  -> add quotes
-    // flag == 0, hasQuotes == 1  -> dont add quotes
-    // flag == 1, hasQuotes == 0  -> dont add quotes
-    // flag == 1, hasQuotes == 1  -> remove quotes
+    // flag == 1, hasQuotes == 0  -> add quotes
+    // flag == 1, hasQuotes == 1  -> dont add quotes
+    // flag == 0, hasQuotes == 0  -> dont add quotes
+    // flag == 0, hasQuotes == 1  -> remove quotes
     // printf("\nflag: %d, hasQuotes: %d\n", flag, hasQuotes);
     // printf("title: %s\n", title);
-    if (flag && hasQuotes)
+    if (flag == 0 && hasQuotes)
     {
+        // remove quotes
         char* ptr = ++title;
         while (*ptr != '"')
         {
@@ -308,12 +309,12 @@ void printTitle(char* title, void* fp, int flag)
             ++ptr;
         }
     }
-    else if (flag || hasQuotes)
+    else if (flag && hasQuotes == 0)
     {
-        fprintf(fp, "%s\t", title);
+        fprintf(fp, "\"%s\"\t", title);
     }
     else
     {
-        fprintf(fp, "\"%s\"\t", title);
+        fprintf(fp, "%s\t", title);
     }
 }

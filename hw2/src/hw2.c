@@ -155,7 +155,7 @@ void DestroyList(list_t** list)  {
 void book_tPrinter(void* data, void *fp, int flag) {
     if (data == NULL) { return; }
     book_t* book = data;
-    if (flag)
+    if (flag == 0)
     {
         // pretty print
         // prints ISBN, month, day
@@ -175,6 +175,10 @@ void book_tPrinter(void* data, void *fp, int flag) {
 }
 
 int book_tISBNAscComparator(void* lhs, void* rhs) {
+    if (lhs == NULL || rhs == NULL)
+    {
+        return 0;
+    }
     unsigned int left = ((book_t*)lhs)->ISBN;
     unsigned int right = ((book_t*)rhs)->ISBN;
     if (left == right)
