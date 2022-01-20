@@ -248,9 +248,14 @@ int bookMatch(book_t* curBook, search_t* criterion) {
     }
     if (criterion->keyword != NULL)
     {
+        // OLD: substring match
+        // match *= (
+        //     strSubstringMatch(curBook->name, criterion->keyword) 
+        //     || strSubstringMatch(curBook->title, criterion->keyword));
+        // NEW: whole word match
         match *= (
-            strSubstringMatch(curBook->name, criterion->keyword) 
-            || strSubstringMatch(curBook->title, criterion->keyword));
+            strKeywordMatch(curBook->name, criterion->keyword) 
+            || strKeywordMatch(curBook->title, criterion->keyword));
     }
     if (criterion->ISBN)
     {

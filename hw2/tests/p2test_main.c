@@ -163,5 +163,22 @@ int main() {
 
     printf("\n******END OF TEST******\n");
 
+    char* word1 = "The Complete Works of William Shakespeare";
+    char* word2 = "William, Shakespeare";
+    char* word3 = "Shakespeare, William";
+    char* word4 = "some other are things";
+
+    char* kw1 = "Shakespeare";
+    char* kw2 = "are";
+
+    printf("kw1, word1: %d\n", strKeywordMatch(word1, kw1));
+    printf("kw1, word2: %d\n", strKeywordMatch(word2, kw1));
+    printf("kw1, word3: %d\n", strKeywordMatch(word3, kw1));
+    printf("kw1, word4: %d\n", strKeywordMatch(word4, kw1));
+
+    printf("kw2, word1: %d\n", strKeywordMatch(word1, kw2));
+    printf("kw2, word2: %d\n", strKeywordMatch(word2, kw2));
+    printf("kw2, word3: %d\n", strKeywordMatch(word3, kw2));
+    printf("kw2, word4: %d\n", strKeywordMatch(word4, kw2));
     return 0;
 }

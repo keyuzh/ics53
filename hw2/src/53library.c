@@ -22,6 +22,7 @@ int main(int argc, char* argv[]) {
         switch (c) {
             case 'I':
             	I_flag = 1;
+                // TODO: check every char is a digit
 				criterion.ISBN = atoi(optarg);
 				break;
             case 'D':
@@ -79,6 +80,11 @@ int main(int argc, char* argv[]) {
         exit(1);
     }
     
+    // -D case defaults to descending ISBN
+    if (D_flag && ORDER_arg == 'n')
+    {
+        ORDER_arg = 'd';
+    }
 
     void* comparer = NULL;
     switch (ORDER_arg)
@@ -87,9 +93,8 @@ int main(int argc, char* argv[]) {
         comparer = &book_tISBNAscComparator;
         break;
     case 'd':
-        comparer = &book_tISBNDescComparator;
-        break;
     default:
+        comparer = &book_tISBNDescComparator;
         break;
     }
 

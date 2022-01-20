@@ -267,6 +267,55 @@ int strSubstringMatch(char* toSearch, char* subString)
     return 0;
 }
 
+int my_isalpha(char c)
+{
+    return (('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z'));
+}
+
+int my_isdigit(char c)
+{
+    return ('0' <= c && c <= '9');
+}
+
+
+void skipToNextWord(char** ptr)
+{
+    while (my_isalpha(**ptr))
+    {
+        ++(*ptr);
+    }
+    while ((**ptr != 0) && (!my_isalpha(**ptr)))
+    {
+        ++(*ptr);
+    }
+}
+
+int strKeywordMatch(char* toSearch, char* keyword)
+{
+    // only match full words, no substring
+    char* key = keyword;
+    while (*toSearch != '\0')
+    {
+        while (*key != 0)
+        {
+            if (*key != *toSearch)
+            {
+                skipToNextWord(&toSearch);
+                key = keyword;
+                break;
+            }
+            ++toSearch;
+            ++key;
+        }
+        if ((*key == 0) && (!my_isalpha(*toSearch)))
+        {
+            return 1;
+        }
+        // ++toSearch;
+    }
+    return 0;
+}
+
 int compareDates(int year1, int month1, int day1, int year2, int month2, int day2)
 {
     // return 1 if date 1 is on or after date 2
