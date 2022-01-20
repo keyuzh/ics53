@@ -58,17 +58,17 @@ int main(int argc, char* argv[]) {
     printf("\n");
 
 
-    printf("**********Duplicate Even Numbers In List**********\n");   
+    printf("**********Duplicate Odd Numbers In List**********\n");   
     // Inserting every other value again, inOrder based on comparator
     for (i = start; i <= end; i=i+2) {
         InsertInOrder(list, (void*)i);
     }
-    // Output (each value on a line): 1 2 2 3 4 4 5 6 6 7 8 8 9 10 10 11 12 12 13 14 14 15 16 16 17 18 18 19 20 20
+    // Output (each value on a line): 1 1 2 3 3 4 5 5 6 7 7 8 9 9 10 11 11 12 13 13 14 15 15 16 17 17 18 19 19 20
     PrintLinkedList(list, stdout);
     printf("\n");
 
     // Delete the list  - Need to implement this function for HW 
-    // DestroyList(list);
+    // DestroyList(&list);
 
     return 0;
 }

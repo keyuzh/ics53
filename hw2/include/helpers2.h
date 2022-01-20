@@ -2,6 +2,7 @@
 #define HELPERS_2_H
 
 // Declare all helper functions for hw2 in this file
+#include "hw2.h"
 
 typedef struct {
     char* current;
@@ -12,6 +13,7 @@ typedef struct {
 int dateFormatCheck(char* str);
 int dateRangeCheck(char* str);
 int dateCheck(char* str);
+int getGenreLength(char* str);
 
 GenreGetter getNextGenre(char* str);
 
@@ -28,6 +30,7 @@ int strStartswith(char* str, char* prefix);
 int strSubstringMatch(char* toSearch, char* subString);
 int compareDates(int year1, int month1, int day1, int year2, int month2, int day2);
 void printTitle(char* title, void* fp, int flag);
+int criterionAllNull(search_t* c);
 
 
 #endif

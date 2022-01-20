@@ -1,6 +1,5 @@
 // Define all helper functions for hw2 in this file
 #include "helpers2.h"
-#include "hw2.h"
 // #include <stdlib.h>
 
 // checks whether a str is a valid date format
@@ -43,7 +42,7 @@ int dateRangeCheck(char* str)
     int month = atoi(str);
     int day   = atoi(str+3);
     int year  = atoi(str+6);
-    return !(month < 1 || month > 12 || day < 1 || day > 31 || year > 2022);
+    return !(month < 1 || month > 12 || day < 1 || day > 31 || year < 0 || year > 2022);
 }
 
 int dateCheck(char* str) 
@@ -218,11 +217,11 @@ int searchName(char* str, char* criterion)
 {
     char* firstNameSubstring;
     char* lastName = getLastName(str, &firstNameSubstring);
-    char* firstName = getFirstName(firstNameSubstring);
     int matchLastName = strFullMatch(lastName, criterion);
+    free(lastName);
+    char* firstName = getFirstName(firstNameSubstring);
     int matchFirstName = strFullMatch(firstName, criterion);
     int result = matchFirstName + matchLastName;
-    free(lastName);
     free(firstName);
     return result;
 }
@@ -317,4 +316,11 @@ void printTitle(char* title, void* fp, int flag)
     {
         fprintf(fp, "%s\t", title);
     }
+}
+
+int criterionAllNull(search_t* c)
+{
+    return (c->name == NULL && c->keyword == NULL && c->ISBN == 0 
+        && c->pubDate.day == 0 && c->pubDate.month == 0 && c->pubDate.year == 0
+        && c->genre == NULL);
 }

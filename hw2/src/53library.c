@@ -101,20 +101,29 @@ int main(int argc, char* argv[]) {
     {
         // printf("READING %s\n", buf);
         book_t* nextBook = createBook(buf);
-        if (nextBook == NULL)
+        // if (nextBook == NULL)
+        // {
+        //     exit(2);
+        // }
+        // match book while reading to save memory
+        if (bookMatch(nextBook, &criterion))
         {
-            exit(2);
-        }
-        if (ORDER_arg == 'n')
-        {
-            InsertAtTail(library, nextBook);
+            if (ORDER_arg == 'n')
+            {
+                InsertAtTail(library, nextBook);
+            }
+            else
+            {
+                InsertInOrder(library, nextBook);
+            }
         }
         else
         {
-            InsertInOrder(library, nextBook);
+            book_tDeleter(nextBook);
         }
     }
     free(buf);
+    fclose(stdin);
 
     FILE* out;
     if (OUTFILE != NULL)
@@ -135,18 +144,12 @@ int main(int argc, char* argv[]) {
     node_t* ptr = library->head;
     while (ptr != NULL)
     {
-        //debug print
-        // printf("Searching: ");
-        // library->printer(ptr->data, stdout, 1);
-        if (bookMatch(ptr->data, &criterion))
-        {
-            library->printer(ptr->data, out, 0);
-        }
+        library->printer(ptr->data, out, 1);
         ptr = ptr->next;
     }
     // clean up
-    DestroyList(&library);
     fclose(out);
+    DestroyList(&library);
     errno = 0;
     exit(EXIT_SUCCESS);
 }

@@ -5,17 +5,6 @@
 #include "helpers2.h"
 #include "linkedlist.h"
 
-// Part 1 Functions to implement
-/**
-* Inserts the parsed values into myDate from str. 
-* Returns 0 upon success and 1 upon error. 
-* Error includes NULL pointer(s), invalid str input format, month value outside [1,12], day
-* value [1,31], or year > 2022. Checking for valid day within a specific month or for leap year * is not performed. 
-*
-* @param str Pointer to string representing date
-* @param myDate Pointer to instance of Date struct to fill
-* @return 1 on success, 0 on error
-**/
 int getDate(char* str, Date* myDate) {
     // format: mm/dd/yyyy
     if (str == NULL)
@@ -58,7 +47,7 @@ int cmpDate(const Date date1, const Date date2) {
 int genreComparator(void* str1, void* str2) {
     char* c1 = str1;
     char* c2 = str2;
-    while (*c1 != '\0' || *c2 != '\0')
+    while (*c1 || *c2)
     {
         if (*c1 != *c2)
         {
@@ -71,20 +60,11 @@ int genreComparator(void* str1, void* str2) {
 }
 
 void genrePrinter(void* data, void* fp, int flag) {
-    // if (flag)
-    // { // pretty print
-    //     fprintf(fp, "%s,", (char*)data); 
-    // }
-    // else 
-    // { // debug print
-        fprintf(fp, "%s", (char*)data); 
-    // }
+    fprintf(fp, "%s", (char*)data); 
 }
 
 void genreDeleter(void* data) {
-    // free() can handle nullptr
     free(data);
-    data = NULL; // how to make original ptr NULL ??
 }
 
 list_t* getGenres(char* str) {
@@ -97,17 +77,33 @@ list_t* getGenres(char* str) {
     char* ptr = str;
     while (ptr != NULL)
     {
-        GenreGetter gg = getNextGenre(ptr);
-        if (gg.current == NULL)
+        // int len = getGenreLength(ptr);
+        int len = 0;
+        char* lenptr = ptr;
+        while (*lenptr != '\n' && *lenptr != '|' && *lenptr != '\0')
+        {
+            ++len;
+            ++lenptr;
+        }
+        if (len == 0)
         {
             // empty genre
             DestroyList(&ll);
             // free(gg);
             return NULL;
         }
-        InsertInOrder(ll, gg.current);
-        ptr = gg.next;
-        // free(gg);
+        char* nextGenre = malloc(len+1);
+        char* dest = nextGenre;
+        while (*ptr != '\n' && *ptr != '|' && *ptr != '\0')
+        {
+            *dest = *ptr;
+            ++dest;
+            ++ptr;
+        }
+        *dest = '\0';
+        InsertInOrder(ll, nextGenre);
+        if (*ptr == '\n' || *ptr == '\0') { break; }
+        ++ptr;
     }
     return ll;
 }
@@ -242,7 +238,8 @@ book_t* createBook(char* line) {
 
 // Part 4 Functions to implement
 int bookMatch(book_t* curBook, search_t* criterion) {
-    if (curBook == NULL || criterion == NULL) { return -1; }
+    if (curBook == NULL || criterion == NULL || criterionAllNull(criterion)) 
+        { return -1; }
     // use multiplication for multi cateria match
     int match = 1;
     if (criterion->name != NULL)
