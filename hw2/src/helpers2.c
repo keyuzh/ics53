@@ -1,6 +1,5 @@
 // Define all helper functions for hw2 in this file
 #include "helpers2.h"
-#include "hw2.h"
 
 // checks whether a str is a valid date format
 // format: mm/dd/yyyy
@@ -50,51 +49,51 @@ int dateCheck(char* str)
     return (dateFormatCheck(str) && dateRangeCheck(str));
 }
 
-int getGenreLength(char* str)
-{
-    int len = 0;
-    while (*str != '\n' && *str != '|' && *str != '\0')
-    {
-        ++len;
-        ++str;
-    }
-    return len;
-}
+// int getGenreLength(char* str)
+// {
+//     int len = 0;
+//     while (*str != '\n' && *str != '|' && *str != '\0')
+//     {
+//         ++len;
+//         ++str;
+//     }
+//     return len;
+// }
 
-void copyGenre(GenreGetter* gg, char* src)
-{
-    char* dest = gg->current;
-    while (*src != '\n' && *src != '|' && *src != '\0')
-    {
-        *dest = *src;
-        ++dest;
-        ++src;
-    }
-    // *dest = '\0';
-    if (*src == '\n' || *src == '\0')
-    {
-        gg->next = NULL;
-    }
-    else 
-    {
-        gg->next = ++src;
-    }
-}
+// void copyGenre(GenreGetter* gg, char* src)
+// {
+//     char* dest = gg->current;
+//     while (*src != '\n' && *src != '|' && *src != '\0')
+//     {
+//         *dest = *src;
+//         ++dest;
+//         ++src;
+//     }
+//     // *dest = '\0';
+//     if (*src == '\n' || *src == '\0')
+//     {
+//         gg->next = NULL;
+//     }
+//     else 
+//     {
+//         gg->next = ++src;
+//     }
+// }
 
-GenreGetter getNextGenre(char* str)
-{
-    // GenreGetter* gg = malloc(sizeof(GenreGetter));
-    GenreGetter gg;
-    int len = getGenreLength(str);
-    if (len == 0)
-    {
-        gg.current = NULL;
-        return gg;
-    }
-    gg.current = calloc(len+1, sizeof(char));
-    copyGenre(&gg, str);
-    return gg;
-}
+// GenreGetter getNextGenre(char* str)
+// {
+//     // GenreGetter* gg = malloc(sizeof(GenreGetter));
+//     GenreGetter gg;
+//     int len = getGenreLength(str);
+//     if (len == 0)
+//     {
+//         gg.current = NULL;
+//         return gg;
+//     }
+//     gg.current = calloc(len+1, sizeof(char));
+//     copyGenre(&gg, str);
+//     return gg;
+// }
 
 int my_strlen(char* str, char end)
 {
@@ -254,18 +253,18 @@ int strStartswith(char* str, char* prefix)
     return 1;
 }
 
-int strSubstringMatch(char* toSearch, char* subString)
-{
-    while (*toSearch != '\0')
-    {
-        if (strStartswith(toSearch, subString))
-        {
-            return 1;
-        }
-        ++toSearch;
-    }
-    return 0;
-}
+// int strSubstringMatch(char* toSearch, char* subString)
+// {
+//     while (*toSearch != '\0')
+//     {
+//         if (strStartswith(toSearch, subString))
+//         {
+//             return 1;
+//         }
+//         ++toSearch;
+//     }
+//     return 0;
+// }
 
 int my_isalpha(char c)
 {
@@ -311,31 +310,30 @@ int strKeywordMatch(char* toSearch, char* keyword)
         {
             return 1;
         }
-        // ++toSearch;
     }
     return 0;
 }
 
-int compareDates(int year1, int month1, int day1, int year2, int month2, int day2)
-{
-    // return 1 if date 1 is on or after date 2
-    if (year1 > year2)
-    {
-        return 1;
-    }
-    else if (year1 == year2)
-    {
-        if (month1 > month2)
-        {
-            return 1;
-        }
-        else if (month1 == month2)
-        {
-            return (day1 >= day2);
-        }
-    }
-    return 0;
-}
+// int compareDates(int year1, int month1, int day1, int year2, int month2, int day2)
+// {
+//     // return 1 if date 1 is on or after date 2
+//     if (year1 > year2)
+//     {
+//         return 1;
+//     }
+//     else if (year1 == year2)
+//     {
+//         if (month1 > month2)
+//         {
+//             return 1;
+//         }
+//         else if (month1 == month2)
+//         {
+//             return (day1 >= day2);
+//         }
+//     }
+//     return 0;
+// }
 
 void printTitle(char* title, void* fp, int flag)
 {
@@ -367,12 +365,12 @@ void printTitle(char* title, void* fp, int flag)
     }
 }
 
-int criterionAllNull(search_t* c)
-{
-    return (c->name == NULL && c->keyword == NULL && c->ISBN == 0 
-        && c->pubDate.day == 0 && c->pubDate.month == 0 && c->pubDate.year == 0
-        && c->genre == NULL);
-}
+// int criterionAllNull(search_t* c)
+// {
+//     return (c->name == NULL && c->keyword == NULL && c->ISBN == 0 
+//         && c->pubDate.day == 0 && c->pubDate.month == 0 && c->pubDate.year == 0
+//         && c->genre == NULL);
+// }
 
 int allDigits(char* str)
 {
@@ -386,4 +384,3 @@ int allDigits(char* str)
     }
     return 1;
 }
-

@@ -12,7 +12,6 @@ int main(int argc, char* argv[]) {
 	int N_flag = 0;
 	int K_flag = 0;
     int NUM_arg = 0;
-    // int NUM_flag = 0;
     char ORDER_arg = 'n';   // default no order
     char* OUTFILE = NULL;
 
@@ -79,25 +78,12 @@ int main(int argc, char* argv[]) {
     
     // INSERT YOUR IMPLEMENTATION HERE
     // getopts only stored the arguments and performed basic checks. More error checking is still needed!!!!
-    // if ((I_flag && criterion.ISBN == 0) || (NUM_flag && NUM_arg == 0))
-    // {
-    //     // invalid number
-    //     fprintf(stdout, USAGE_MSG "\n");
-    //     exit(1);
-    // }
-    
-    // // -D case defaults to descending ISBN
-    // if (D_flag && ORDER_arg == 'n')
-    // {
-    //     ORDER_arg = 'd';
-    // }
-
+   
     // EC: check same search criteria not specified more than once
     if ((I_flag > 1) || (D_flag > 1) ||(G_flag > 1) ||(N_flag > 1) ||(K_flag > 1))
     {
         exit(1);
     }
-    
 
     void* comparer = NULL;
     switch (ORDER_arg)
@@ -121,6 +107,7 @@ int main(int argc, char* argv[]) {
         book_t* nextBook = createBook(buf);
         if (nextBook == NULL)
         {
+            // error in csv file
             exit(2);
         }
         // match book while reading to save memory
@@ -140,15 +127,16 @@ int main(int argc, char* argv[]) {
             book_tDeleter(nextBook);
         }
     }
+    // save memory
     free(buf);
     fclose(stdin);
-
     FILE* out;
     if (OUTFILE != NULL)
     {
         out = fopen(OUTFILE, "w");
         if (out == NULL)
         {
+            // failed to create outfile
             exit(3);
         }
     }
@@ -157,7 +145,6 @@ int main(int argc, char* argv[]) {
         out = stdout;
     }
 
-    // printf("END READING\n");
     // iterate through the linked list and search book
     node_t* ptr = library->head;
     while (ptr != NULL)
