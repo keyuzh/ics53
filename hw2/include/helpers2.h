@@ -33,5 +33,6 @@ int compareDates(int year1, int month1, int day1, int year2, int month2, int day
 void printTitle(char* title, void* fp, int flag);
 int criterionAllNull(search_t* c);
 
+int allDigits(char* str);
 
 #endif

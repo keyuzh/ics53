@@ -1,6 +1,6 @@
 // Define all helper functions for hw2 in this file
 #include "helpers2.h"
-// #include <stdlib.h>
+#include "hw2.h"
 
 // checks whether a str is a valid date format
 // format: mm/dd/yyyy
@@ -373,3 +373,17 @@ int criterionAllNull(search_t* c)
         && c->pubDate.day == 0 && c->pubDate.month == 0 && c->pubDate.year == 0
         && c->genre == NULL);
 }
+
+int allDigits(char* str)
+{
+    while (*str != '\0')
+    {
+        if (!my_isdigit(*str))
+        {
+            return 0;
+        }
+        ++str;
+    }
+    return 1;
+}
+

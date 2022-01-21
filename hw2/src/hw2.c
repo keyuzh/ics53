@@ -199,7 +199,6 @@ void book_tDeleter(void* data) {
 book_t* createBook(char* line) {
     char *bookTitle, *bookISBNstr, *bookFirstName, *bookLastName, *bookPublishDate;
     bookTitle = bookISBNstr = bookFirstName = bookLastName = bookPublishDate = NULL;
-    // TODO: error handling when the input didn't have enough fields
     if (line == NULL) { return NULL; }
     char* reader = line;
     book_t* book = malloc(sizeof(book_t));
@@ -238,7 +237,7 @@ book_t* createBook(char* line) {
 
 // Part 4 Functions to implement
 int bookMatch(book_t* curBook, search_t* criterion) {
-    if (curBook == NULL || criterion == NULL || criterionAllNull(criterion)) 
+    if (curBook == NULL || criterion == NULL)
         { return -1; }
     // use multiplication for multi cateria match
     int match = 1;

@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
 	int N_flag = 0;
 	int K_flag = 0;
     int NUM_arg = 0;
-    int NUM_flag = 0;
+    // int NUM_flag = 0;
     char ORDER_arg = 'n';   // default no order
     char* OUTFILE = NULL;
 
@@ -21,34 +21,40 @@ int main(int argc, char* argv[]) {
     while ((c = getopt(argc, argv, "I:D:G:N:K:Hn:ado:" )) >= 0) {
         switch (c) {
             case 'I':
-            	I_flag = 1;
-                // TODO: check every char is a digit
+            	I_flag += 1;
+                if (!allDigits(optarg)) {
+                    fprintf(stderr, USAGE_MSG "\n");
+                    exit(1);
+                }
 				criterion.ISBN = atoi(optarg);
 				break;
             case 'D':
-        	    D_flag = 1;
+        	    D_flag += 1;
 				if(!getDate(optarg,&criterion.pubDate)) {
-                    fprintf(stdout, USAGE_MSG "\n");
-                    return EXIT_FAILURE;
+                    fprintf(stderr, USAGE_MSG "\n");
+                    exit(1);
                 }
                 break;
             case 'G':
-				G_flag = 1;
+				G_flag += 1;
 				criterion.genre = optarg;
                 break;
             case 'N':
-				N_flag = 1;
+				N_flag += 1;
 				criterion.name = optarg;
                 break;
             case 'K':
-				K_flag = 1;
+				K_flag += 1;
 				criterion.keyword = optarg;
                 break;
             case 'H':
 				fprintf(stdout, USAGE_MSG);
 				return EXIT_SUCCESS;
             case 'n':
-                NUM_flag = 1;
+                if (!allDigits(optarg)) {
+                    fprintf(stderr, USAGE_MSG "\n");
+                    exit(1);
+                }
 				NUM_arg = atoi(optarg);
                 break;
             case 'o':
@@ -73,18 +79,25 @@ int main(int argc, char* argv[]) {
     
     // INSERT YOUR IMPLEMENTATION HERE
     // getopts only stored the arguments and performed basic checks. More error checking is still needed!!!!
-    if ((I_flag && criterion.ISBN == 0) || (NUM_flag && NUM_arg == 0))
+    // if ((I_flag && criterion.ISBN == 0) || (NUM_flag && NUM_arg == 0))
+    // {
+    //     // invalid number
+    //     fprintf(stdout, USAGE_MSG "\n");
+    //     exit(1);
+    // }
+    
+    // // -D case defaults to descending ISBN
+    // if (D_flag && ORDER_arg == 'n')
+    // {
+    //     ORDER_arg = 'd';
+    // }
+
+    // EC: check same search criteria not specified more than once
+    if ((I_flag > 1) || (D_flag > 1) ||(G_flag > 1) ||(N_flag > 1) ||(K_flag > 1))
     {
-        // invalid number
-        fprintf(stdout, USAGE_MSG "\n");
         exit(1);
     }
     
-    // -D case defaults to descending ISBN
-    if (D_flag && ORDER_arg == 'n')
-    {
-        ORDER_arg = 'd';
-    }
 
     void* comparer = NULL;
     switch (ORDER_arg)
@@ -106,10 +119,10 @@ int main(int argc, char* argv[]) {
     {
         // printf("READING %s\n", buf);
         book_t* nextBook = createBook(buf);
-        // if (nextBook == NULL)
-        // {
-        //     exit(2);
-        // }
+        if (nextBook == NULL)
+        {
+            exit(2);
+        }
         // match book while reading to save memory
         if (bookMatch(nextBook, &criterion))
         {
