@@ -22,7 +22,7 @@ int main(int argc, char* argv[]) {
             case 'I':
             	I_flag += 1;
                 if (!allDigits(optarg)) {
-                    fprintf(stderr, USAGE_MSG "\n");
+                    fprintf(stderr, USAGE_MSG);
                     exit(1);
                 }
 				criterion.ISBN = atoi(optarg);
@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
             case 'D':
         	    D_flag += 1;
 				if(!getDate(optarg,&criterion.pubDate)) {
-                    fprintf(stderr, USAGE_MSG "\n");
+                    fprintf(stderr, USAGE_MSG);
                     exit(1);
                 }
                 break;
@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
 				return EXIT_SUCCESS;
             case 'n':
                 if (!allDigits(optarg)) {
-                    fprintf(stderr, USAGE_MSG "\n");
+                    fprintf(stderr, USAGE_MSG);
                     exit(1);
                 }
 				NUM_arg = atoi(optarg);
@@ -82,6 +82,7 @@ int main(int argc, char* argv[]) {
     // EC: check same search criteria not specified more than once
     if ((I_flag > 1) || (D_flag > 1) ||(G_flag > 1) ||(N_flag > 1) ||(K_flag > 1))
     {
+        fprintf(stderr, USAGE_MSG);
         exit(1);
     }
 
