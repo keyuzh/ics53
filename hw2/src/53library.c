@@ -61,6 +61,12 @@ int main(int argc, char* argv[]) {
                 break;
             case 'a':
             case 'd':
+                if (ORDER_arg != 'n')
+                {
+                    // already specified
+                    fprintf(stderr, USAGE_MSG);
+                    exit(1);
+                }
 				ORDER_arg = c;
                 break;
             default:
