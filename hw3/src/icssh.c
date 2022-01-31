@@ -1,4 +1,5 @@
 #include "icssh.h"
+#include "helpers.h"
 #include <readline/readline.h>
 
 int main(int argc, char* argv[]) {
@@ -7,6 +8,12 @@ int main(int argc, char* argv[]) {
 	pid_t pid;
 	pid_t wait_result;
 	char* line;
+	// signal handlers
+	// sigset_t mask, prev;
+	signal(SIGUSR2, sigusr2_handler);
+	// sigemptyset(&mask);
+	// sigaddset(&mask, SIGUSR2);
+
 #ifdef GS
     rl_outstream = fopen("/dev/null", "w");
 #endif
@@ -39,6 +46,25 @@ int main(int argc, char* argv[]) {
 			free_job(job);
             validate_input(NULL);   // calling validate_input with NULL will free the memory it has allocated
             return 0;
+		}
+
+		if (strcmp(job->procs->cmd, "cd") == 0) {
+			// cd
+			char* path;
+			if (job->procs->argc == 1) {
+				// no dir supplied
+				path = getenv("HOME");
+			} else {
+				path = job->procs->argv[1];
+			}
+			command_cd(path);
+			continue;
+		}
+
+		if (strcmp(job->procs->cmd, "estatus") == 0) {
+			//estatus
+			fprintf(stdout, "%d\n", WEXITSTATUS(exit_status));
+			continue;
 		}
 
 		// example of good error handling!
