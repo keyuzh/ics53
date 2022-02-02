@@ -41,7 +41,8 @@ void reapTerminatedChild(List_t* bgjobs)
 {
     if (bgjobs == NULL) { return; }
     node_t* ptr = bgjobs->head;
-    for (int i = 0; i < bgjobs->length; i++)
+    int index = 0;
+    while (ptr != NULL)
     {
         bgentry_t* val = (bgentry_t*) (ptr->value);
         pid_t child_pid = val->pid;
@@ -51,8 +52,13 @@ void reapTerminatedChild(List_t* bgjobs)
         if (stopped)
         {
             fprintf(stdout, BG_TERM, stopped, val->job->line);
+            // remove node from linked list
+            ptr = ptr->next;
+            removeByIndex(bgjobs, index);
+            continue;
         }
         ptr = ptr->next;
+        ++index;
     }
     // #define CHECK_BACKGROUND_JOBS 0
 }
@@ -79,4 +85,90 @@ void killAllChild(List_t* bgjobs)
         fprintf(stdout, BG_TERM, val->pid, val->job->line);
         ptr = ptr->next;
     }
+}
+
+void print_rd_err()
+{
+    fprintf(stderr, RD_ERR);
+}
+
+int checkRediretionCombination(proc_info* proc)
+{
+    int res = 1;
+    if (proc->in_file != NULL && proc->out_file != NULL)
+    {
+        res *= strcmp(proc->in_file, proc->out_file);
+    }
+    if (proc->in_file != NULL && proc->err_file != NULL)
+    {
+        res *= strcmp(proc->in_file, proc->err_file);
+    }
+    if (proc->in_file != NULL && proc->outerr_file != NULL)
+    {
+        res *= strcmp(proc->in_file, proc->outerr_file);
+    }
+    if (proc->out_file != NULL && proc->err_file != NULL)
+    {
+        res *= strcmp(proc->out_file, proc->err_file);
+    }
+    if (proc->out_file != NULL && proc->outerr_file != NULL)
+    {
+        res *= strcmp(proc->out_file, proc->outerr_file);
+    }
+    if (proc->err_file != NULL && proc->outerr_file != NULL)
+    {
+        res *= strcmp(proc->err_file, proc->outerr_file);
+    }
+    return res;
+}
+
+int redirection(proc_info* proc)
+{
+    if (checkRediretionCombination(proc) == 0)
+    {
+        print_rd_err();
+        return -1;
+    }
+    if (proc->in_file != NULL)
+    {
+        int in_file_desc = open(proc->in_file, O_RDONLY);
+        if (in_file_desc == -1)
+        { 
+            print_rd_err(); 
+            return -1;
+        }
+        dup2(in_file_desc, STDIN_FILENO);
+    }
+    if (proc->out_file != NULL)
+    {
+        int out_file_desc = open(proc->out_file, O_WRONLY | O_TRUNC | O_CREAT);
+        if (out_file_desc == -1)
+        { 
+            print_rd_err(); 
+            return -1;
+        }
+        dup2(out_file_desc, STDOUT_FILENO);
+    }
+    if (proc->err_file != NULL)
+    {
+        int err_file_desc = open(proc->err_file, O_WRONLY | O_TRUNC | O_CREAT);
+        if (err_file_desc == -1)
+        { 
+            print_rd_err(); 
+            return -1;
+        }
+        dup2(err_file_desc, STDERR_FILENO);
+    }
+    if (proc->outerr_file != NULL)
+    {
+        int outerr_file_desc = open(proc->outerr_file, O_WRONLY | O_TRUNC | O_CREAT | O_APPEND);
+        if (outerr_file_desc == -1)
+        { 
+            print_rd_err(); 
+            return -1;
+        }
+        dup2(outerr_file_desc, STDOUT_FILENO);
+        dup2(outerr_file_desc, STDERR_FILENO);
+    }
+    
 }

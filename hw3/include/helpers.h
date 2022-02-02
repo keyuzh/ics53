@@ -23,4 +23,6 @@ void command_bglist(List_t* bgjobs);
 
 void killAllChild(List_t* bgjobs);
 
+int redirection(proc_info* proc);
+
 #endif

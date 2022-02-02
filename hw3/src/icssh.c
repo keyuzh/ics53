@@ -98,6 +98,13 @@ int main(int argc, char* argv[]) {
 		if (pid == 0) {  //If zero, then it's the child process
             //get the first command in the job list
 		    proc_info* proc = job->procs;
+			int redir_result = redirection(proc);
+			if (redir_result == -1) {
+				free_job(job);  
+				free(line);
+    			validate_input(NULL);  // calling validate_input with NULL will free the memory it has allocated
+				exit(EXIT_FAILURE);
+			}
 			exec_result = execvp(proc->cmd, proc->argv);
 			if (exec_result < 0) {  //Error checking
 				printf(EXEC_ERR, proc->cmd);
