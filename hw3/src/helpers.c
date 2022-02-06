@@ -1,6 +1,51 @@
 // Your helper functions need to be here.
 #include "helpers.h"
 
+char* customized_shell_prompt(int* offset)
+{
+    char* hostname = malloc(65);
+    char* username = get_username();
+    gethostname(hostname, 65);
+    *offset = strlen(username) + strlen(hostname) + 32;
+    char* result = malloc(strlen(username) + strlen(hostname) + _POSIX_PATH_MAX + 39);
+    strcpy(result, KYEL "<53shell>" KGRN);
+    strcpy(result+23, username);
+    strcpy(result+23+strlen(username), "@");
+    strcpy(result+23+strlen(username)+1, hostname);
+    strcpy(result+23+strlen(username)+1+strlen(hostname), ":" KBLU);
+    free(hostname);
+    free(username);
+    return result;
+}
+
+char* set_customized_shell(char* prompt, int offset)
+{
+    char* dirOffset = prompt + offset;
+    getcwd(dirOffset, _POSIX_PATH_MAX);
+    char* finalOffset = dirOffset + strlen(dirOffset);
+    strcpy(finalOffset, KNRM "$ ");
+    return prompt;
+}
+
+char* get_username()
+{
+  uid_t uid = geteuid();
+  struct passwd *pw = getpwuid(uid);
+  if (pw)
+  {
+    char* uname = malloc(strlen(pw->pw_name)+1);
+    uname = pw->pw_name;
+    // free(pw);
+    return uname;
+  }
+  return "";
+}
+
+void command_print_ascii_art()
+{
+    printf(ICS53_ASCII_ART);
+}
+
 void command_cd(const char* path) 
 {
     if (chdir(path) != 0)
@@ -27,7 +72,7 @@ void sigchld_handler(int sig)
     // waitpid()
     // fprintf(stdout, "------------SIGCHLD %d -------------\n", getpid());
     extern int CHECK_BACKGROUND_JOBS;
-	CHECK_BACKGROUND_JOBS = 1;
+    CHECK_BACKGROUND_JOBS = 1;
 }
 
 int bgentry_tComparer(void* entry1, void* entry2)
@@ -115,7 +160,7 @@ int checkRediretionCombination(proc_info* proc)
     {
         res *= strcmp(proc->out_file, proc->outerr_file);
     }
-    if (proc->err_file != NULL && proc->outerr_file != NULL)
+   if (proc->err_file != NULL && proc->outerr_file != NULL)
     {
         res *= strcmp(proc->err_file, proc->outerr_file);
     }
@@ -170,5 +215,103 @@ int redirection(proc_info* proc)
         dup2(outerr_file_desc, STDOUT_FILENO);
         dup2(outerr_file_desc, STDERR_FILENO);
     }
+    return 0;
+}
+
+void piping(job_info* job)
+{
+    int totalChild = job->nproc;
+    // printf("TOTAL CHILD %d \n", totalChild);
+    // allocate 2d array for pipes
+    int (*pipes)[2];
+    pipes = malloc(job->nproc * sizeof(*pipes));
+
+    for (int i = 0; i < job->nproc; i++)
+    {
+        pipe(pipes[i]);
+    }
+    pid_t* child_pids = malloc(job->nproc * sizeof(pid_t));
+    proc_info* proc = job->procs;
+    for (int i = 0; i < job->nproc; i++)
+    {
+        child_pids[i] = fork();
+        // printf("in child %d\n", child_pids[i]);
+        if (child_pids[i] < 0)
+        {
+            perror("fork error");
+            exit(EXIT_FAILURE);
+        }
+        if (child_pids[i] == 0)
+        {
+            printf("proc details %s %s\n", proc->cmd, proc->argv[1]);
+            // child
+            close(pipes[i][1]);
+            // sleep(1);
+            printf("------\n\n");
+            printf("proc %s, i = %d\n", proc->cmd, i);
+            printf("pipes[%d]: %d, %d\n", i, pipes[i][0], pipes[i][1]);
+            if (i > 0) 
+            {
+                dup2(pipes[i][0], STDIN_FILENO); // redirect pipe to stdin
+                printf("redirected stdin to file %d\n", pipes[i][0]);
+            }
+            if ((i+1) < (totalChild))
+            {
+                printf("redirected stdout to file %d\n", pipes[i+1][1]);
+                dup2(pipes[i+1][1], STDOUT_FILENO); // redirect stdout to next pipe
+            }
+            int exec_result = execvp(proc->cmd, proc->argv);
+            // printf("should not see this\n");
+            if (exec_result < 0)
+            {
+                printf(EXEC_ERR, proc->cmd);
+                free_job(job);  
+                // extern char* line;
+                // free(line);
+                validate_input(NULL);  // calling validate_input with NULL will free the memory it has allocated
+                exit(EXIT_FAILURE);
+            }
+        }
+        // else
+        // {
+        //     // parent
+        // }
+        // printf("parent at i = %d\n", i);
+        proc = proc->next_proc;
+    }
+    int exit_status;
+    // wait for all child to finish
+	sigset_t mask_child, prev;
+	sigemptyset(&mask_child);
+	sigaddset(&mask_child, SIGCHLD);
+    // block sigchld 
+    // sigprocmask(SIG_BLOCK, &mask_child, &prev);
+    // sleep(1);
+    // for (int i = 0; i < job->nproc; i++)
+    // {
+        int i = totalChild-1;
+        printf("waiting for child %d %d\n", i, child_pids[i]);
+        pid_t wait_result = waitpid(child_pids[i], &exit_status, 0);
+        printf("child %d dead\n", wait_result);
+    //     if (wait_result < 0) {
+    //         printf(WAIT_ERR);
+    //         exit(EXIT_FAILURE);
+    //     }
+    // }
+    // sigprocmask(SIG_SETMASK, &prev, NULL);
+
+
+    // for GS
+
+    for (int i = 0; i < totalChild; i++)
+    {
+        kill(child_pids[i], SIGINT);
+    }
     
+
+    // end 
+
+    free(child_pids);
+    free(pipes);
+    free_job(job);  // if a foreground job, we no longer need the data
 }

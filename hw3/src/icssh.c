@@ -29,8 +29,12 @@ int main(int argc, char* argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
+	// custom shell prompt
+	int custom_shell_offset;
+	char* custom_shell = customized_shell_prompt(&custom_shell_offset);
+
     // print the prompt & wait for the user to enter commands string
-	while ((line = readline(SHELL_PROMPT)) != NULL) {
+	while ((line = readline(set_customized_shell(custom_shell, custom_shell_offset))) != NULL) {
 		// check if sigchld flag is set
 		// printf("background: %d\n", CHECK_BACKGROUND_JOBS);
 		if (CHECK_BACKGROUND_JOBS)
@@ -61,7 +65,13 @@ int main(int argc, char* argv[]) {
 			free(line);
 			free_job(job);
             validate_input(NULL);   // calling validate_input with NULL will free the memory it has allocated
+			free(custom_shell);
             return 0;
+		}
+
+		if (strcmp(job->procs->cmd, "ascii53") == 0) {
+			command_print_ascii_art();
+			continue;
 		}
 
 		if (strcmp(job->procs->cmd, "cd") == 0) {
@@ -86,6 +96,15 @@ int main(int argc, char* argv[]) {
 		if (strcmp(job->procs->cmd, "bglist") == 0) {
 			// bglist
 			command_bglist(&bgjobs);
+			continue;
+		}
+
+
+		// piping
+		if (job->nproc > 1)
+		{
+			free(line);
+			piping(job);
 			continue;
 		}
 
@@ -140,6 +159,8 @@ int main(int argc, char* argv[]) {
 
 		free(line);
 	}
+	
+	free(custom_shell);
 
     // calling validate_input with NULL will free the memory it has allocated
     validate_input(NULL);
