@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
 		// printf("background: %d\n", CHECK_BACKGROUND_JOBS);
 		if (CHECK_BACKGROUND_JOBS)
 		{
-			reapTerminatedChild(&bgjobs);
+			reapTerminatedChild(&bgjobs, &exit_status);
 			CHECK_BACKGROUND_JOBS = 0;
 		}
 		
@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
 		if (job->nproc > 1)
 		{
 			free(line);
-			piping(job);
+			piping(job, &bgjobs);
 			continue;
 		}
 

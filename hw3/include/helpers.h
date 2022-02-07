@@ -42,7 +42,7 @@ void sigchld_handler(int sig);
 
 int bgentry_tComparer(void* entry1, void* entry2);
 
-void reapTerminatedChild(List_t* bgjobs);
+void reapTerminatedChild(List_t* bgjobs, int* exit_status);
 
 void command_bglist(List_t* bgjobs);
 
@@ -50,6 +50,6 @@ void killAllChild(List_t* bgjobs);
 
 int redirection(proc_info* proc);
 
-void piping(job_info* job);
+void piping(job_info* job, List_t* bgjobs);
 
 #endif
