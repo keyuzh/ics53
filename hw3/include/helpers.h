@@ -45,6 +45,7 @@ int bgentry_tComparer(void* entry1, void* entry2);
 void reapTerminatedChild(List_t* bgjobs, int* exit_status);
 
 void command_bglist(List_t* bgjobs);
+void command_fg(List_t* bgjobs, int* exit_status);
 
 void killAllChild(List_t* bgjobs);
 

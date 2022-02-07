@@ -1,5 +1,5 @@
 import sys
 
 i = input()
-print(i, file=sys.stderr)
-print(i, file=sys.stdout)
+print("io_combined", i, file=sys.stderr)
+print("io_combined", i, file=sys.stdout)

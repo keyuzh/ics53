@@ -82,32 +82,66 @@ int bgentry_tComparer(void* entry1, void* entry2)
     return e1->seconds - e2->seconds;
 }
 
+
+// void reapTerminatedChild(List_t* bgjobs, int* exit_status)
+// {
+//     if (bgjobs == NULL) { return; }
+//     node_t* ptr = bgjobs->head;
+//     int index = 0;
+//     while (ptr != NULL)
+//     {
+//         bgentry_t* val = (bgentry_t*) (ptr->value);
+//         pid_t child_pid = val->pid;
+//         // printf("Checking %d\n", child_pid);
+//         int stopped = waitpid(val->pid, exit_status, WNOHANG);
+//         if (stopped)
+//         {
+//             // if child is the last process in the pipeline (or no pipe at all)
+//             // print the BG_TERM message and remove it from the linked list
+//             // otherwise, do something else?
+//             fprintf(stdout, BG_TERM, stopped, val->job->line);
+//             // remove node from linked list
+//             ptr = ptr->next;
+//             removeByIndex(bgjobs, index);
+//             continue;
+//         }
+//         ptr = ptr->next;
+//         ++index;
+//     }
+//     // #define CHECK_BACKGROUND_JOBS 0
+// }
+
 void reapTerminatedChild(List_t* bgjobs, int* exit_status)
 {
     if (bgjobs == NULL) { return; }
-    node_t* ptr = bgjobs->head;
-    int index = 0;
-    while (ptr != NULL)
+    pid_t child_pid;
+    while ((child_pid = waitpid(-1, exit_status, WNOHANG)) > 0)
     {
-        bgentry_t* val = (bgentry_t*) (ptr->value);
-        pid_t child_pid = val->pid;
-        // printf("Checking %d\n", child_pid);
-        int stopped = waitpid(val->pid, exit_status, WNOHANG);
-        if (stopped)
+        // printf("%d\n", child_pid );
+        int index = 0;
+        node_t* ptr = bgjobs->head;
+        // if pid in bglist, print BG_TERM message and remove if from list
+        while (ptr != NULL)
         {
-            // if child is the last process in the pipeline (or no pipe at all)
-            // print the BG_TERM message and remove it from the linked list
-            // otherwise, do something else?
-            fprintf(stdout, BG_TERM, stopped, val->job->line);
-            // remove node from linked list
+            bgentry_t* val = (bgentry_t*) (ptr->value);
+            if (child_pid == val->pid)
+            {
+                fprintf(stdout, BG_TERM, child_pid, val->job->line);
+                // remove node from linked list
+                removeByIndex(bgjobs, index);
+                // free the job? 
+                break;
+            }
             ptr = ptr->next;
-            removeByIndex(bgjobs, index);
-            continue;
+            ++index;
         }
-        ptr = ptr->next;
-        ++index;
     }
-    // #define CHECK_BACKGROUND_JOBS 0
+    //     printf("%d\n", child_pid );
+    // if (child_pid == -1)
+    // {
+    //     printf(WAIT_ERR);
+    //     exit(EXIT_FAILURE);
+    // }
 }
 
 void command_bglist(List_t* bgjobs)
@@ -119,6 +153,26 @@ void command_bglist(List_t* bgjobs)
         print_bgentry((bgentry_t*)(ptr->value));
         ptr = ptr->next;
     }
+}
+
+void command_fg(List_t* bgjobs, int* exit_status)
+{
+    if ((bgjobs == NULL) || (bgjobs->length == 0))
+    {
+        printf(PID_ERR);
+        return;
+    }
+    
+    bgentry_t* recent = (bgentry_t*) removeRear(bgjobs);
+    printf("%s\n", recent->job->line);
+    // sigprocmask(SIG_BLOCK, &mask_child, &prev);
+    pid_t wait_result = waitpid(recent->pid, exit_status, 0);
+    // sigprocmask(SIG_SETMASK, &prev, NULL);
+    if (wait_result < 0) {
+        printf(WAIT_ERR);
+        exit(EXIT_FAILURE);
+    }
+    free_job(recent->job);  // if a foreground job, we no longer need the data
 }
 
 void killAllChild(List_t* bgjobs)

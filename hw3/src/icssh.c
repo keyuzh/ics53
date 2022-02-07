@@ -99,6 +99,12 @@ int main(int argc, char* argv[]) {
 			continue;
 		}
 
+		if (strcmp(job->procs->cmd, "fg") == 0) {
+			// fg
+			command_fg(&bgjobs, &exit_status);
+			continue;
+		}
+
 
 		// piping
 		if (job->nproc > 1)
