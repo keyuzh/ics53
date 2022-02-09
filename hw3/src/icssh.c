@@ -101,7 +101,8 @@ int main(int argc, char* argv[]) {
 
 		if (strcmp(job->procs->cmd, "fg") == 0) {
 			// fg
-			command_fg(&bgjobs, &exit_status);
+			pid_t fg_pid = job->procs->argc > 1 ? atoi(job->procs->argv[1]) : -1;
+			command_fg(&bgjobs, &exit_status, fg_pid);
 			continue;
 		}
 

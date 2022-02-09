@@ -155,15 +155,41 @@ void command_bglist(List_t* bgjobs)
     }
 }
 
-void command_fg(List_t* bgjobs, int* exit_status)
+// void command_fg()
+
+void command_fg(List_t* bgjobs, int* exit_status, pid_t pid)
 {
     if ((bgjobs == NULL) || (bgjobs->length == 0))
     {
         printf(PID_ERR);
         return;
     }
+
+    bgentry_t* recent = NULL;
+    if (pid == -1)
+    {
+        recent = (bgentry_t*) removeRear(bgjobs);  // most recent
+    }
+    else
+    {
+        node_t* ptr = bgjobs->head;
+        for (int i = 0; i < bgjobs->length; i++)
+        {
+            // printf("checking %d\n", ((bgentry_t*)(ptr->value))->pid);
+            if (((bgentry_t*)(ptr->value))->pid == pid)
+            {
+                recent = (bgentry_t*) removeByIndex(bgjobs, i);
+                break;
+            }
+            ptr = ptr->next;
+        }
+        if (recent == NULL)
+        {
+            printf(PID_ERR);
+            return;
+        }
+    }
     
-    bgentry_t* recent = (bgentry_t*) removeRear(bgjobs);
     printf("%s\n", recent->job->line);
     // sigprocmask(SIG_BLOCK, &mask_child, &prev);
     pid_t wait_result = waitpid(recent->pid, exit_status, 0);
