@@ -2,7 +2,7 @@
 #include "helpers.h"
 #include "linkedList.h"
 #include <readline/readline.h>
-volatile int CHECK_BACKGROUND_JOBS;
+volatile sig_atomic_t CHECK_BACKGROUND_JOBS;
 
 int main(int argc, char* argv[]) {
 	int exec_result;
@@ -31,18 +31,19 @@ int main(int argc, char* argv[]) {
 
 	// custom shell prompt
 	int custom_shell_offset;
-	char* custom_shell = customized_shell_prompt(&custom_shell_offset);
+	char* custom_shell = NULL;
+	#ifdef DEBUG
+		custom_shell = customized_shell_prompt(&custom_shell_offset);
+	#endif
 
     // print the prompt & wait for the user to enter commands string
 	while ((line = readline(set_customized_shell(custom_shell, custom_shell_offset))) != NULL) {
 		// check if sigchld flag is set
-		// printf("background: %d\n", CHECK_BACKGROUND_JOBS);
 		if (CHECK_BACKGROUND_JOBS)
 		{
 			reapTerminatedChild(&bgjobs, &exit_status);
 			CHECK_BACKGROUND_JOBS = 0;
 		}
-		
 
         // MAGIC HAPPENS! Command string is parsed into a job struct
         // Will print out error message if command string is invalid
@@ -59,8 +60,8 @@ int main(int argc, char* argv[]) {
 
 		// example built-in: exit
 		if (strcmp(job->procs->cmd, "exit") == 0) {
-			// TODO: kill all child before exit
-			killAllChild(&bgjobs);
+			killAllChild(&bgjobs);  // kill all child before exit
+			deleteList(&bgjobs);
 			// Terminating the shell
 			free(line);
 			free_job(job);
@@ -68,12 +69,12 @@ int main(int argc, char* argv[]) {
 			free(custom_shell);
             return 0;
 		}
-
 		if (strcmp(job->procs->cmd, "ascii53") == 0) {
 			command_print_ascii_art();
+			free(line);
+			free_job(job);
 			continue;
 		}
-
 		if (strcmp(job->procs->cmd, "cd") == 0) {
 			// cd
 			char* path;
@@ -84,28 +85,32 @@ int main(int argc, char* argv[]) {
 				path = job->procs->argv[1];
 			}
 			command_cd(path);
+			free(line);
+			free_job(job);
 			continue;
 		}
-
 		if (strcmp(job->procs->cmd, "estatus") == 0) {
 			//estatus
 			fprintf(stdout, "%d\n", WEXITSTATUS(exit_status));
+			free(line);
+			free_job(job);
 			continue;
 		}
-
 		if (strcmp(job->procs->cmd, "bglist") == 0) {
 			// bglist
 			command_bglist(&bgjobs);
+			free(line);
+			free_job(job);
 			continue;
 		}
-
 		if (strcmp(job->procs->cmd, "fg") == 0) {
 			// fg
 			pid_t fg_pid = job->procs->argc > 1 ? atoi(job->procs->argv[1]) : -1;
 			command_fg(&bgjobs, &exit_status, fg_pid);
+			free(line);
+			free_job(job);
 			continue;
 		}
-
 
 		// piping
 		if (job->nproc > 1)
@@ -120,7 +125,6 @@ int main(int argc, char* argv[]) {
 			perror("fork error");
 			exit(EXIT_FAILURE);
 		}
-		// printf("child pid: %d\n", pid);
 		if (pid == 0) {  //If zero, then it's the child process
             //get the first command in the job list
 		    proc_info* proc = job->procs;
@@ -145,7 +149,6 @@ int main(int argc, char* argv[]) {
 			}
 		} else if (job->bg) {
 			// background task
-			// printf("BACKGROUND\n");
 			bgentry_t* bgjob = malloc(sizeof(bgentry_t));
 			bgjob->job = job;
 			bgjob->pid = pid;
@@ -163,12 +166,11 @@ int main(int argc, char* argv[]) {
 			}
 			free_job(job);  // if a foreground job, we no longer need the data
 		}
-
 		free(line);
 	}
 	
+	deleteList(&bgjobs);
 	free(custom_shell);
-
     // calling validate_input with NULL will free the memory it has allocated
     validate_input(NULL);
 

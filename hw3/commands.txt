@@ -1,2 +1,0 @@
-echo "Mario likes pipes" | python3 rsrc/io_combined.py
-exit

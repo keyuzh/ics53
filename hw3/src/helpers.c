@@ -20,6 +20,10 @@ char* customized_shell_prompt(int* offset)
 
 char* set_customized_shell(char* prompt, int offset)
 {
+    if (prompt == NULL)
+    {
+        return "";
+    }
     char* dirOffset = prompt + offset;
     getcwd(dirOffset, _POSIX_PATH_MAX);
     char* finalOffset = dirOffset + strlen(dirOffset);
@@ -31,14 +35,16 @@ char* get_username()
 {
   uid_t uid = geteuid();
   struct passwd *pw = getpwuid(uid);
+  char* uname;
   if (pw)
   {
-    char* uname = malloc(strlen(pw->pw_name)+1);
-    uname = pw->pw_name;
-    // free(pw);
+    uname = malloc(strlen(pw->pw_name)+1);
+    strcpy(uname, pw->pw_name);
     return uname;
   }
-  return "";
+  uname = malloc(2);
+  strcpy(uname, "");
+  return uname;
 }
 
 void command_print_ascii_art()
@@ -69,8 +75,6 @@ void sigusr2_handler(int sig)
 
 void sigchld_handler(int sig)
 {
-    // waitpid()
-    // fprintf(stdout, "------------SIGCHLD %d -------------\n", getpid());
     extern int CHECK_BACKGROUND_JOBS;
     CHECK_BACKGROUND_JOBS = 1;
 }
@@ -82,42 +86,12 @@ int bgentry_tComparer(void* entry1, void* entry2)
     return e1->seconds - e2->seconds;
 }
 
-
-// void reapTerminatedChild(List_t* bgjobs, int* exit_status)
-// {
-//     if (bgjobs == NULL) { return; }
-//     node_t* ptr = bgjobs->head;
-//     int index = 0;
-//     while (ptr != NULL)
-//     {
-//         bgentry_t* val = (bgentry_t*) (ptr->value);
-//         pid_t child_pid = val->pid;
-//         // printf("Checking %d\n", child_pid);
-//         int stopped = waitpid(val->pid, exit_status, WNOHANG);
-//         if (stopped)
-//         {
-//             // if child is the last process in the pipeline (or no pipe at all)
-//             // print the BG_TERM message and remove it from the linked list
-//             // otherwise, do something else?
-//             fprintf(stdout, BG_TERM, stopped, val->job->line);
-//             // remove node from linked list
-//             ptr = ptr->next;
-//             removeByIndex(bgjobs, index);
-//             continue;
-//         }
-//         ptr = ptr->next;
-//         ++index;
-//     }
-//     // #define CHECK_BACKGROUND_JOBS 0
-// }
-
 void reapTerminatedChild(List_t* bgjobs, int* exit_status)
 {
     if (bgjobs == NULL) { return; }
     pid_t child_pid;
     while ((child_pid = waitpid(-1, exit_status, WNOHANG)) > 0)
     {
-        // printf("%d\n", child_pid );
         int index = 0;
         node_t* ptr = bgjobs->head;
         // if pid in bglist, print BG_TERM message and remove if from list
@@ -126,22 +100,17 @@ void reapTerminatedChild(List_t* bgjobs, int* exit_status)
             bgentry_t* val = (bgentry_t*) (ptr->value);
             if (child_pid == val->pid)
             {
-                fprintf(stdout, BG_TERM, child_pid, val->job->line);
                 // remove node from linked list
-                removeByIndex(bgjobs, index);
-                // free the job? 
+                bgentry_t* toDelete = (bgentry_t*) removeByIndex(bgjobs, index);
+                fprintf(stdout, BG_TERM, child_pid, val->job->line);
+                free_job(toDelete->job);
+                free(toDelete);
                 break;
             }
             ptr = ptr->next;
             ++index;
         }
     }
-    //     printf("%d\n", child_pid );
-    // if (child_pid == -1)
-    // {
-    //     printf(WAIT_ERR);
-    //     exit(EXIT_FAILURE);
-    // }
 }
 
 void command_bglist(List_t* bgjobs)
@@ -154,8 +123,6 @@ void command_bglist(List_t* bgjobs)
         ptr = ptr->next;
     }
 }
-
-// void command_fg()
 
 void command_fg(List_t* bgjobs, int* exit_status, pid_t pid)
 {
@@ -175,7 +142,6 @@ void command_fg(List_t* bgjobs, int* exit_status, pid_t pid)
         node_t* ptr = bgjobs->head;
         for (int i = 0; i < bgjobs->length; i++)
         {
-            // printf("checking %d\n", ((bgentry_t*)(ptr->value))->pid);
             if (((bgentry_t*)(ptr->value))->pid == pid)
             {
                 recent = (bgentry_t*) removeByIndex(bgjobs, i);
@@ -190,15 +156,15 @@ void command_fg(List_t* bgjobs, int* exit_status, pid_t pid)
         }
     }
     
+    // prints the cmdline
     printf("%s\n", recent->job->line);
-    // sigprocmask(SIG_BLOCK, &mask_child, &prev);
     pid_t wait_result = waitpid(recent->pid, exit_status, 0);
-    // sigprocmask(SIG_SETMASK, &prev, NULL);
     if (wait_result < 0) {
         printf(WAIT_ERR);
         exit(EXIT_FAILURE);
     }
-    free_job(recent->job);  // if a foreground job, we no longer need the data
+    free_job(recent->job);
+    free(recent);
 }
 
 void killAllChild(List_t* bgjobs)
@@ -208,8 +174,10 @@ void killAllChild(List_t* bgjobs)
     for (int i = 0; i < bgjobs->length; i++)
     {
         bgentry_t* val = (bgentry_t*) (ptr->value);
-        kill(val->pid, SIGKILL); // which signal to send? 
+        kill(val->pid, SIGKILL);
         fprintf(stdout, BG_TERM, val->pid, val->job->line);
+        free_job(val->job);
+        free(val);
         ptr = ptr->next;
     }
 }
@@ -217,6 +185,59 @@ void killAllChild(List_t* bgjobs)
 void print_rd_err()
 {
     fprintf(stderr, RD_ERR);
+}
+
+int countRedirectionFiles(job_info* job)
+{
+    int n = 0;
+    proc_info* proc = job->procs;
+    for (int i = 0; i < job->nproc; i++)
+    {
+        if (proc->in_file != NULL) { ++n; }
+        if (proc->out_file != NULL) { ++n; }
+        if (proc->err_file != NULL) { ++n; }
+        if (proc->outerr_file != NULL) { ++n; }
+        proc = proc->next_proc;
+    }
+    return n;
+}
+
+int checkDuplicateFile(char** fileNames, char* nextFile, int* index)
+{
+    for (int i = 0; i < *index; i++)
+    {
+        if (strcmp(fileNames[i], nextFile) == 0)
+        {
+            return 0;
+        }
+    }
+    fileNames[*index] = nextFile;
+    ++(*index);
+    return 1;
+}
+
+int checkRedirection_pipe(job_info* job)
+{
+    int numOfFiles = countRedirectionFiles(job);
+    if (numOfFiles == 0) { return 1; }
+    char** fileNames = malloc(numOfFiles * sizeof(char*));
+    int fileNames_index = 0;
+    int result = 1;
+    proc_info* proc = job->procs;
+    for (int i = 0; i < job->nproc; i++)
+    {
+        if (((proc->in_file != NULL) && ((i != 0) || (checkDuplicateFile(fileNames, proc->in_file, &fileNames_index) == 0)))
+        || ((proc->out_file != NULL) && ((i != (job->nproc - 1)) || (checkDuplicateFile(fileNames, proc->out_file, &fileNames_index) == 0)))
+        || ((proc->err_file != NULL) && (checkDuplicateFile(fileNames, proc->err_file, &fileNames_index) == 0))
+        || ((proc->outerr_file != NULL) && ((i != (job->nproc - 1)) || (checkDuplicateFile(fileNames, proc->outerr_file, &fileNames_index) == 0))))
+        {
+            result = 0;
+            break;
+        }
+        proc = proc->next_proc;
+    }
+    free(fileNames);
+    return result;
 }
 
 int checkRediretionCombination(proc_info* proc)
@@ -300,106 +321,15 @@ int redirection(proc_info* proc)
     return 0;
 }
 
-// void piping(job_info* job)
-// {
-//     int totalChild = job->nproc;
-//     // printf("TOTAL CHILD %d \n", totalChild);
-//     // allocate 2d array for pipes
-//     int (*pipes)[2];
-//     pipes = malloc(job->nproc * sizeof(*pipes));
-
-//     for (int i = 0; i < job->nproc; i++)
-//     {
-//         pipe(pipes[i]);
-//     }
-//     pid_t* child_pids = malloc(job->nproc * sizeof(pid_t));
-//     proc_info* proc = job->procs;
-//     for (int i = 0; i < job->nproc; i++)
-//     {
-//         child_pids[i] = fork();
-//         // printf("in child %d\n", child_pids[i]);
-//         if (child_pids[i] < 0)
-//         {
-//             perror("fork error");
-//             exit(EXIT_FAILURE);
-//         }
-//         if (child_pids[i] == 0)
-//         {
-//             printf("proc details %s %s\n", proc->cmd, proc->argv[1]);
-//             // child
-//             close(pipes[i][1]);
-//             // sleep(1);
-//             printf("------\n\n");
-//             printf("proc %s, i = %d\n", proc->cmd, i);
-//             printf("pipes[%d]: %d, %d\n", i, pipes[i][0], pipes[i][1]);
-//             if (i > 0) 
-//             {
-//                 dup2(pipes[i][0], STDIN_FILENO); // redirect pipe to stdin
-//                 printf("redirected stdin to file %d\n", pipes[i][0]);
-//             }
-//             if ((i+1) < (totalChild))
-//             {
-//                 printf("redirected stdout to file %d\n", pipes[i+1][1]);
-//                 dup2(pipes[i+1][1], STDOUT_FILENO); // redirect stdout to next pipe
-//             }
-//             int exec_result = execvp(proc->cmd, proc->argv);
-//             // printf("should not see this\n");
-//             if (exec_result < 0)
-//             {
-//                 printf(EXEC_ERR, proc->cmd);
-//                 free_job(job);  
-//                 // extern char* line;
-//                 // free(line);
-//                 validate_input(NULL);  // calling validate_input with NULL will free the memory it has allocated
-//                 exit(EXIT_FAILURE);
-//             }
-//         }
-//         // else
-//         // {
-//         //     // parent
-//         // }
-//         // printf("parent at i = %d\n", i);
-//         proc = proc->next_proc;
-//     }
-//     int exit_status;
-//     // wait for all child to finish
-// 	sigset_t mask_child, prev;
-// 	sigemptyset(&mask_child);
-// 	sigaddset(&mask_child, SIGCHLD);
-//     // block sigchld 
-//     // sigprocmask(SIG_BLOCK, &mask_child, &prev);
-//     // sleep(1);
-//     // for (int i = 0; i < job->nproc; i++)
-//     // {
-//         int i = totalChild-1;
-//         printf("waiting for child %d %d\n", i, child_pids[i]);
-//         pid_t wait_result = waitpid(child_pids[i], &exit_status, 0);
-//         printf("child %d dead\n", wait_result);
-//     //     if (wait_result < 0) {
-//     //         printf(WAIT_ERR);
-//     //         exit(EXIT_FAILURE);
-//     //     }
-//     // }
-//     // sigprocmask(SIG_SETMASK, &prev, NULL);
-
-
-//     // for GS
-
-//     for (int i = 0; i < totalChild; i++)
-//     {
-//         kill(child_pids[i], SIGINT);
-//     }
-    
-
-//     // end 
-
-//     free(child_pids);
-//     free(pipes);
-//     free_job(job);  // if a foreground job, we no longer need the data
-// }
-
 void piping(job_info* job, List_t* bgjobs)
 {
+    // before creating pipes, check redirections
+    if (checkRedirection_pipe(job) == 0)
+    {
+        print_rd_err();
+        return;
+    }
+
     int totalChild = job->nproc;
     int totalPipes = totalChild - 1;
     // printf("TOTAL CHILD %d \n", totalChild);
@@ -416,7 +346,6 @@ void piping(job_info* job, List_t* bgjobs)
     for (int i = 0; i < job->nproc; i++)
     {
         child_pids[i] = fork();
-        // printf("in child %d\n", child_pids[i]);
         if (child_pids[i] < 0)
         {
             perror("fork error");
@@ -425,11 +354,12 @@ void piping(job_info* job, List_t* bgjobs)
         if (child_pids[i] == 0)
         {
             // in child
-            // printf("proc %s, i = %d\n", proc->cmd, i);
-            if (i < totalPipes)
-            {
-                // printf("pipes[%d]: %d, %d\n", i, pipes[i][0], pipes[i][1]);
-            }
+			int redir_result = redirection(proc);
+			if (redir_result == -1) {
+				free_job(job);  
+    			validate_input(NULL);  // calling validate_input with NULL will free the memory it has allocated
+				exit(EXIT_FAILURE);
+			}
             // close all pipes not used by child
             for (int j = 0; j < totalPipes; j++)
             {
@@ -437,46 +367,31 @@ void piping(job_info* job, List_t* bgjobs)
                 {
                     // close not used write pipe
                     close(pipes[j][1]);
-                    // printf("child %d: closed pipe %d write end, file %d\n", i, j, pipes[j][1]);
                 }
                 if (i == 0 || j != i-1)
                 {
                     // close not used read pipe
                     close(pipes[j][0]);
-                    // printf("child %d: closed pipe %d read end, file %d\n", i, j, pipes[j][0]);
                 }
             }
-
             if (i > 0) 
             {
                 dup2(pipes[i-1][0], STDIN_FILENO); // redirect pipe to stdin
-                // fprintf(stderr, "child %d, redirected stdin to file %d\n",i, pipes[i-1][0]);
             }
-            // if ((i+1) < (totalChild))
             if (i < totalPipes)
             {
-                // fprintf(stderr, "child %d, redirected stdout to file %d\n", i, pipes[i][1]);
                 dup2(pipes[i][1], STDOUT_FILENO); // redirect stdout to next pipe
             }
             int exec_result = execvp(proc->cmd, proc->argv);
-            // printf("should not see this\n");
             if (exec_result < 0)
             {
                 printf(EXEC_ERR, proc->cmd);
                 free_job(job);  
-                // extern char* line;
-                // free(line);
                 validate_input(NULL);  // calling validate_input with NULL will free the memory it has allocated
                 exit(EXIT_FAILURE);
             }
         }
-        // else
-        // {
-        //     // parent
-        // }
-        // printf("parent at i = %d\n", i);
         proc = proc->next_proc;
-        // sleep(2);
     }
     // parent close all pipes
     for (int i = 0; i < totalPipes; i++)
@@ -484,14 +399,12 @@ void piping(job_info* job, List_t* bgjobs)
         close(pipes[i][0]);
         close(pipes[i][1]);
     }
-
     // if background process, add it to list of background jobs
     if (job->bg)
     {
         bgentry_t* bgjob = malloc(sizeof(bgentry_t));
         bgjob->job = job;
-        // TODO: which pid should it use? we need pid of last process for BG_TERM message
-        bgjob->pid = child_pids[totalChild-1];
+        bgjob->pid = child_pids[totalChild-1];  // use the pid of the last child for simplicity
         time(&(bgjob->seconds));
         insertInOrder(bgjobs, bgjob);
     }
@@ -505,10 +418,7 @@ void piping(job_info* job, List_t* bgjobs)
         sigprocmask(SIG_BLOCK, &mask_child, &prev);
         for (int i = 0; i < totalChild; i++)
         {
-            // int i = totalChild-1;
-            // printf("waiting for child %d %d\n", i, child_pids[i]);
             pid_t wait_result = waitpid(child_pids[i], &exit_status, 0);
-            // printf("child %d dead\n", wait_result);
             if (wait_result < 0) {
                 printf(WAIT_ERR);
                 exit(EXIT_FAILURE);
