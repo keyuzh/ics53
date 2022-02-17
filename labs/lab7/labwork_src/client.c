@@ -40,16 +40,23 @@ void run_client(char *server_addr_str, int server_port){
 
     sleep(1);
 
-    bzero(buffer, BUFFER_SIZE);
-    printf("Enter the message that sent to the server: ");
-    int n = 0;
-    while ((buffer[n++] = getchar()) != '\n' && n < BUFFER_SIZE){
-        ;
+    while (1)
+    {
+        bzero(buffer, BUFFER_SIZE);
+        printf("Enter the message that sent to the server: ");
+        int n = 0;
+        while ((buffer[n++] = getchar()) != '\n' && n < BUFFER_SIZE){
+            ;
+        }
+        if (strcmp(buffer, "exit\n") == 0)
+        {
+            break;
+        }
+        write(sockfd, buffer, n);
+        bzero(buffer, BUFFER_SIZE);
+        read(sockfd, buffer, BUFFER_SIZE);
+        printf("Message received from Server : %s", buffer);
     }
-    write(sockfd, buffer, n);
-    bzero(buffer, BUFFER_SIZE);
-    read(sockfd, buffer, BUFFER_SIZE);
-    printf("Message received from Server : %s", buffer);
 
     // close the socket
     close(sockfd);

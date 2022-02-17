@@ -47,33 +47,45 @@ void run_server(int server_port){
 
     len = sizeof(cli);
 
-    // Wait and Accept the connection from client
-    clientfd = accept(sockfd, (SA*)&cli, &len);
-    if (clientfd < 0) {
-        printf("server acccept failed\n");
-        exit(EXIT_FAILURE);
-    }
-    else
-        printf("Client connetion accepted\n");
+    while (1)
+    {
+        // printf("waiting for connection\n");
+        // Wait and Accept the connection from client
+        clientfd = accept(sockfd, (SA*)&cli, &len);
+        if (clientfd < 0) {
+            printf("server acccept failed\n");
+            exit(EXIT_FAILURE);
+        }
+        else
+            printf("Client connetion accepted\n");
 
-    bzero(buffer, BUFFER_SIZE);
+        while (1)
+        {
+            bzero(buffer, BUFFER_SIZE);
+            // wait and read the message from client, copy it in buffer
+            int received_size = read(clientfd, buffer, BUFFER_SIZE);
+            if (received_size < 0){
+                printf("Receiving failed\n");
+                exit(EXIT_FAILURE);
+            }
+            if (received_size == 0)
+            {
+                // printf("close connection\n");
+                close(clientfd);
+                break;
+            }
+            // print buffer which contains the client contents
+            printf("Receive message from client: %s", buffer);
 
-    // wait and read the message from client, copy it in buffer
-    int received_size = read(clientfd, buffer, BUFFER_SIZE);
-    if (received_size < 0){
-        printf("Receiving failed\n");
-        exit(EXIT_FAILURE);
+            // and send that buffer to client
+            int ret = write(clientfd, buffer, received_size);
+            if (ret < 0){
+                printf("Sending failed\n");
+                exit(EXIT_FAILURE);
+            }
+            printf("Send the message back to client: %s", buffer);
+        }
     }
-    // print buffer which contains the client contents
-    printf("Receive message from client: %s", buffer);
-
-    // and send that buffer to client
-    int ret = write(clientfd, buffer, received_size);
-    if (ret < 0){
-        printf("Sending failed\n");
-        exit(EXIT_FAILURE);
-    }
-    printf("Send the message back to client: %s", buffer);
 
     // Close the socket at the end
     close(clientfd);
