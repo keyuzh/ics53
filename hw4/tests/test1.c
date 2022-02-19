@@ -83,8 +83,8 @@ int main(int argc, char *argv[]) {
 
   // Free a variable
   printf("=== Test5: Free a block and snapshot ===\n");
-  info("%s\n", "Freeing value1...");
-  ics_free(value1);
+  info("%s\n", "Freeing value2...");
+  ics_free(value2);
   ics_freelist_print();
   press_to_cont();
 

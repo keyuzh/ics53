@@ -26,6 +26,39 @@ ics_free_header *freelist_head = NULL;
  * an invalid request.
  */
 void *ics_malloc(size_t size) { 
+    if (freelist_head == NULL)
+    {
+        // first time calling malloc(), get a page and initialize head
+        initializeHeap(&freelist_head);
+    }
+
+    // ics_freelist_print();
+    // search the freelist for the first free block
+    ics_free_header* nextFreeBlock = freelist_head;
+    while (nextFreeBlock != NULL)
+    {
+        size_t blockSize = calculateRequiredBlockSize(size);
+        // printf("block size: %lu\n", blockSize);
+        if (nextFreeBlock->header.block_size >= blockSize)
+        {
+            // found a good block
+            void* allocated_block = allocateBlock(size, blockSize, nextFreeBlock, &freelist_head);
+            void* payload_addr = allocated_block + 8;
+
+            printf("============after malloc()===============\n");
+            ics_freelist_print();
+            printf("===========================\n");
+            // ics_header_print(allocated_block);
+            // printf("===========================\n");
+            // ics_payload_print(payload_addr);
+
+            return payload_addr;
+        }
+        nextFreeBlock = nextFreeBlock->next;
+    }
+
+    // TODO: request more pages
+    
     return NULL;
 }
 
@@ -40,7 +73,23 @@ void *ics_malloc(size_t size) {
  * @return 0 upon success, -1 if error and set errno accordingly.
  */
 int ics_free(void *ptr) { 
-    return -99999;
+    if (checkBlockValid(ptr) == 0)
+    {
+        // invalid ptr
+        errno = EINVAL;
+        return -1;
+    }
+    ics_payload_print(ptr);
+    // now free the block
+    printf("==================before free()=======================\n");
+    ics_freelist_print();
+    printf("======================================================\n");
+    freeBlock(ptr, &freelist_head);
+    printf("==================after free()========================\n");
+    ics_freelist_print();
+    printf("======================================================\n");
+    
+    return 0;
 }
 
 /********************** EXTRA CREDIT ***************************************/
