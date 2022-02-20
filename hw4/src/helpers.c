@@ -9,6 +9,16 @@ size_t getBlockSize(void* word)
     return ((ics_header*)word)->block_size & -2;
 }
 
+size_t getRequestedSize(void* word)
+{
+    return ((ics_header*)word)->requested_size;
+}
+
+void setRequestedSize(void* word, size_t size)
+{
+    ((ics_header*)word)->requested_size = size;
+}
+
 void make_header(void* addr, size_t requested_size, size_t block_size, int allocated)
 {
     ics_header* header = (ics_header*) addr;

@@ -88,6 +88,12 @@ int main(int argc, char *argv[]) {
   ics_freelist_print();
   press_to_cont();
 
+  printf("=== Test8: realloc a block and snapshot ===\n");
+  info("%s\n", "realloc value2...");
+  value2 = ics_realloc(value2, 200);
+  ics_freelist_print();
+  press_to_cont();
+
   printf("=== Test7: Free a block and snapshot ===\n");
   info("%s\n", "Freeing value2...");
   ics_free(value2);

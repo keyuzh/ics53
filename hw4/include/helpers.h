@@ -12,6 +12,8 @@ typedef struct memory_boundries
 } memory_boundries;
 
 size_t getBlockSize(void* word);
+size_t getRequestedSize(void* word);
+void setRequestedSize(void* word, size_t size);
 void make_header(void* addr, size_t requested_size, size_t block_size, int allocated);
 void make_footer(void* addr, size_t requested_size, size_t block_size, int allocated);
 void make_header_and_footer(void* head_addr, size_t requested_size, size_t block_size, int allocated);

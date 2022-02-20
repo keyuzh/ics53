@@ -117,5 +117,51 @@ int ics_free(void *ptr) {
  * block is free'd and return NULL.
  */
 void *ics_realloc(void *ptr, size_t size) {
+    if (checkBlockValid(ptr, &heap_boundaries) == 0)
+    {
+        // invalid ptr
+        errno = EINVAL;
+        return NULL;
+    }
+
+    // valid pointer and size 0, free
+    if (size == 0)
+    {
+        ics_free(ptr);
+        return NULL;
+    }
+
+    void* header = ptr - 8;
+    size_t block_size = getBlockSize(header);
+
+    if (size > block_size)
+    {
+        // realloc to larger size
+        void* new_block = ics_malloc(size);
+        if (new_block == NULL)
+        {
+            // fail to allocate new memory
+            return NULL;
+        }
+        // success, copy payload to new block
+        memcpy(new_block, ptr, getRequestedSize(header));
+        // free old block
+        ics_free(ptr);
+        return new_block;
+    }
+    else
+    {
+        // realloc to smaller (or same) size
+        size_t new_block_size = calculateRequiredBlockSize(size);
+        if (new_block_size == block_size)
+        {
+            // new size same as old size, update requested size
+            setRequestedSize(header, size);
+            return ptr;
+        }
+        
+    }
+
+
     return NULL;
 }
