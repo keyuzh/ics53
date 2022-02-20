@@ -1,7 +1,6 @@
 #include "helpers.h"
 #include "debug.h"
 
-// #include "icsmm.h"
 
 /* Helper function definitions go here */
 
@@ -10,45 +9,77 @@ size_t getBlockSize(void* word)
     return ((ics_header*)word)->block_size & -2;
 }
 
+void make_header(void* addr, size_t requested_size, size_t block_size, int allocated)
+{
+    ics_header* header = (ics_header*) addr;
+    *header = (ics_header) {block_size | allocated, HEADER_MAGIC, requested_size};
+}
+
+void make_footer(void* addr, size_t requested_size, size_t block_size, int allocated)
+{
+    ics_footer* footer = (ics_footer*) addr;
+    *footer = (ics_footer) {block_size | allocated, FOOTER_MAGIC, requested_size};
+}
+
+void make_header_and_footer(void* head_addr, size_t requested_size, size_t block_size, int allocated)
+{
+    make_header(head_addr, requested_size, block_size, allocated);
+    make_footer(getFooterAddr(head_addr), requested_size, block_size, allocated);
+}
+
+ics_footer* getFooterAddr(ics_header* header)
+{
+    return (ics_footer*)((void*)header + getBlockSize(header) - 8);
+}
+
+ics_header* getHeaderAddr(ics_footer* footer)
+{
+    return (ics_header*)((void*)footer + 8 - getBlockSize(footer));
+}
+
 // helpers for malloc()
 
-void initializeHeap(ics_free_header** freelist_head)
+int getMorePage(int firstPage, memory_boundries* heap_boundaries)
 {
-    // printf("getting first page\n");
-    // get a page of heap
+    // get start and end pointers of new page
     void* start = ics_inc_brk();
+    if (start == (void*)-1)
+    {
+        // no more memory possible, errno should already be set
+        return -1;
+    }
     void* end = ics_get_brk();
-    // printf("start: %p\nend: %p\n", start, end);
+    
+    // create epilogue
+    make_header(end-8, 0, 0, 1);
+    heap_boundaries->end = end;
 
-    // create a prologue and epilogue
-    ics_footer* prologue = (ics_footer*) start;
-    ics_header* epilogue = (ics_header*) (end - 8);
-    // printf("prologue: %p\n", prologue);
-    // printf("epilogue: %p\n", epilogue);
-    *prologue = (ics_footer) {1, FOOTER_MAGIC, 0};
-    *epilogue = (ics_header) {1, HEADER_MAGIC, 0};
-
-    // ics_header_print(prologue);
-    // ics_header_print(epilogue);
+    // if first page, create prologue
+    if (firstPage)
+    {
+        make_footer(start, 0, 0, 1);
+        heap_boundaries->start = start;
+    }
 
     // make a big free block
-    ics_header* head = (ics_header*) (start + 8);
-    ics_footer* foot = (ics_footer*) (end - 16);
-    // size of big free block = 4096 - 8 (prologue) - 8 (epilogue);
-    *head = (ics_header) {4080, HEADER_MAGIC, 0};
-    *foot = (ics_footer) {4080, FOOTER_MAGIC, 0};
+    // the location of header is either: 
+    //   right after prologue (start + 8) if first page
+    //   the old epilogue (start - 8) if subsequent pages
+    void* head = start + (firstPage ? 8 : -8);
+    void* foot = end - 16;
 
-    // ics_free_header* ics_free_next = (ics_free_header*) (start + 16);
-    // ics_free_header* ics_free_prev = (ics_free_header*) (start + 24);
-    // ics_free_next = NULL;
-    // ics_free_prev = NULL;
+    // size of big free block if first page = 4096 - 8 (prologue) - 8 (epilogue)
+    // subsequent pages = 4096 - 8 (epilogue) + 8 (prev epilogue)
+    // or simply calculate the difference between addresses
+    size_t block_size = foot - head + 8;
+    make_header(head, 0, block_size, 0);
+    make_footer(foot, 0, block_size, 0);
 
-    // let freelist_head point to the big free block
-    *freelist_head = (ics_free_header*) head;
-    (*freelist_head)->next = NULL;
-    (*freelist_head)->prev = NULL;
-
-    // ics_header_print(*freelist_head);
+    // coalesce if possible then add the block to the free list
+    ics_free_header* block = coalesce(head);
+    addBlockToFreeList(block);
+    
+    return 0;
 }
 
 /*
@@ -57,15 +88,15 @@ void initializeHeap(ics_free_header** freelist_head)
 */
 size_t calculateRequiredBlockSize(size_t size)
 {
-    // payload size = request size + (16 - (request size %16))
+    // payload size = request size + (16 - (request size %16))    no need +16 if already multiple of 16
     // total block size = payload size + 8(header) + 8(footer)
-    return 8 + 8 + (size + (16 - (size % 16)));
+    return size + (size % 16 == 0 ? 16 : 32) - (size % 16);
 }
 
 /*
     allocate the block, modify head pointer if needed
 */
-void* allocateBlock(size_t requested_size, size_t block_size, ics_free_header* block, ics_free_header** freelist_head)
+void* allocateBlock(size_t requested_size, size_t block_size, ics_free_header* block)
 {
     // bytes remaining in the free block after allocating
     size_t remaining_size = block->header.block_size - block_size;
@@ -74,18 +105,13 @@ void* allocateBlock(size_t requested_size, size_t block_size, ics_free_header* b
         // if the remaining block is too small, add it to this block
         block_size += remaining_size;
     }
-    else
+    else  // split block
     {
         // move the header to the splited block
-        void* header_location_after_split = (void*)block;
-        header_location_after_split += block_size;
-        ics_free_header* new_header = (ics_free_header*) header_location_after_split;
-        new_header->header = (ics_header) {remaining_size, HEADER_MAGIC, 0};
-        // update block on footer 
-        void* footer_location = (void*)block;
-        footer_location += block->header.block_size - 8;
-        ics_footer* footer = (ics_footer*) footer_location;
-        footer->block_size = remaining_size;
+        ics_free_header* new_header = (ics_free_header*) (((void*)block) + block_size);
+        make_header((void*)new_header, 0, remaining_size, 0);
+        // find the address of footer and update
+        getFooterAddr((ics_header*)block)->block_size = remaining_size;
         // move the prev and next pointer
         new_header->next = block->next;
         new_header->prev = block->prev;
@@ -93,63 +119,56 @@ void* allocateBlock(size_t requested_size, size_t block_size, ics_free_header* b
         // of the explicit list, move the freelist_head pointer as well
         if (new_header->prev == NULL)
         {
-            *freelist_head = new_header;
+            freelist_head = new_header;
+        }
+        else
+        {
+            // prev pointer not null, move the next pointer there to point at new header
+            new_header->prev->next = new_header;
+        }
+        if (new_header->next != NULL)
+        {
+            // next pointer not null, move the prev pointer there to point at new header
+            new_header->next->prev = new_header;
         }
     }
     // create header and footer for the allocated block
-    ics_header* header = (ics_header*)block;
-    header->block_size = block_size | 1;
-    header->requested_size = requested_size;
-    void* footer_location = (void*) block;
-    footer_location += block_size - 8;
-    ics_footer* footer = (ics_footer*) footer_location;
-    *footer = (ics_footer) {block_size | 1, FOOTER_MAGIC, requested_size};
+    make_header_and_footer((void*)block, requested_size, block_size, 1);
 
     // return the address of the new block
-    return (void*)header;
+    return (void*)block;
 }
-
-
 
 // helpers for free()
 
-int checkBlockValid(void* payload_addr)
+int checkBlockValid(void* payload_addr, memory_boundries* bound)
 {
-    void* header_addr = payload_addr - 8;
-    // TODO: check header_addr is valid (no segfault)
-    ics_header* header = (ics_header*) header_addr;
-    void* footer_addr = header_addr + (header->block_size & -2) - 8;
-    ics_footer* footer = (ics_footer*) footer_addr;
+    void* header = payload_addr - 8;
+    if (checkAddressValid(header, bound) == 0)
+    {
+        // address out of bounds
+        return 0;
+    }
+    ics_footer* footer = getFooterAddr(header);
 
-    // int result = 1;
-    // check the following
-    // ptr between prologue and epilogue
-
-    // allocated bit 'a' is set in both header and footer
     return (
-    checkAllocated((void*)header)
-    && checkAllocated((void*)footer)
-    // hid field of header
-    && checkHeaderField(header)
-    // fid field of footer
-    && checkFootererField(footer)
-    // block size in header and footer are equal
-    // requested size in header and footer are equal
-    && checkSizeEqual(header, footer)
+        checkAllocated(header)
+        && checkAllocated((void*)footer)  // allocated bit 'a' is set in both header and footer
+        && checkHeaderField(header)       // hid field of header
+        && checkFootererField(footer)     // fid field of footer
+        && checkSizeEqual(header, footer) // block and requested size in header and footer are equal
     );
+}
+
+int checkAddressValid(void* addr, memory_boundries* bound)
+{
+    return ((addr > bound->start) && (addr < bound->end));
 }
 
 int checkAllocated(void* word)
 {
     return (((ics_header*)word)->block_size & 1);
 }
-
-// int checkBlockIsAllocated(ics_header* header, ics_footer* footer)
-// {
-//     int header_a = header->block_size & 1;
-//     int footer_a = footer->block_size & 1;
-//     return (header_a && footer_a);
-// }
 
 int checkHeaderField(ics_header* header)
 {
@@ -167,56 +186,19 @@ int checkSizeEqual(ics_header* header, ics_footer* footer)
             && (header->requested_size == footer->requested_size));
 }
 
-void freeBlock(void* payload_addr, ics_free_header** freelist_head)
-{
-    void* header_addr = payload_addr - 8;
-    ics_header* header = (ics_header*) header_addr;
-    void* footer_addr = header_addr + (header->block_size & -2) - 8;
-    ics_footer* footer = (ics_footer*) footer_addr;
-
-    size_t block_size = (header->block_size & -2);
-    
-    // coalescing
-    void* prev_footer_addr = header_addr - 8;
-    // ics_footer* prev_footer = (ics_footer*) prev_footer_addr;
-    void* next_header_addr = footer_addr + 8;
-    // ics_header* next_header = (ics_header*) next_header_addr;
-    if (checkAllocated(prev_footer_addr) == 0)
-    {
-        // coalesce with previous block
-        size_t prev_block_size = ((ics_footer*)prev_footer_addr)->block_size;
-        void* prev_header_addr = prev_footer_addr + 8 - prev_block_size;
-        header = (ics_header*) prev_header_addr;
-        block_size += prev_block_size;
-        removeBlock((ics_free_header*)prev_header_addr, freelist_head);
-    }
-    if (checkAllocated(next_header_addr) == 0)
-    {
-        // coalesce with next block
-        size_t next_block_size = getBlockSize(next_header_addr);
-        void* next_footer_addr = next_header_addr + next_block_size - 8;
-        footer = (ics_footer*) next_footer_addr;
-        block_size += next_block_size;
-        removeBlock((ics_free_header*)next_header_addr, freelist_head);
-    }
-
-    // make the header and footer "free"
-    // *header = (ics_header){block_size, HEADER_MAGIC, 0};
-    header->block_size = block_size;
-    // *footer = (ics_footer){block_size, FOOTER_MAGIC, 0};
-    footer->block_size = block_size;
-
-    // add current block back to free list 
-    addBlockToFreeList((ics_free_header*)header, freelist_head);
-    
-    return;
-
-}
+// void freeBlock(void* payload_addr)
+// {
+//     void* header_addr = payload_addr - 8;
+//     // try to coalesce
+//     ics_free_header* block = coalesce((ics_free_header*) header_addr);
+//     // add current block back to free list 
+//     addBlockToFreeList(block);
+// }
 
 /* 
     removes the coalesced block from the freelist
 */
-void removeBlock(ics_free_header* block, ics_free_header** freelist_head)
+void removeBlock(ics_free_header* block)
 {
     if (block->next != NULL)
     {
@@ -229,19 +211,19 @@ void removeBlock(ics_free_header* block, ics_free_header** freelist_head)
     }
     else
     {
-        // block must equal to freelist_head
-        *freelist_head = block->next;
+        // block equal to freelist_head
+        freelist_head = block->next;
     }
 }
 
-void addBlockToFreeList(ics_free_header* block, ics_free_header** freelist_head)
+void addBlockToFreeList(ics_free_header* block)
 {
-    size_t block_size = block->header.block_size;
-    ics_free_header* ptr = *freelist_head;
+    size_t block_size = getBlockSize(block);
+    ics_free_header* ptr = freelist_head;
     ics_free_header* prev = NULL;
     while (ptr != NULL)
     {
-        size_t next_block_size = ptr->header.block_size;
+        size_t next_block_size = getBlockSize(ptr);
         if (block_size <= next_block_size)
         {
             // insert block here
@@ -250,21 +232,79 @@ void addBlockToFreeList(ics_free_header* block, ics_free_header** freelist_head)
         prev = ptr;
         ptr = ptr->next;
     }
-
+    // insert block
     block->next = ptr;
     block->prev = prev;
     if (ptr != NULL)
     {
+        // change prev pointer at next free block
         ptr->prev = block;
     }
 
     if (prev != NULL)
     {
+        // change next pointer at previous free block
         prev->next = block;
     }
     else
     {
         // insert at front, modify freelist_head
-        *freelist_head = block;
+        freelist_head = block;
+    }
+}
+
+/*
+    given the header to a free block (assume it is not in the free list)
+    try to coalece with adjacent blocks if possible, return pointer to the 
+    coalesced block
+*/
+ics_free_header* coalesce(ics_free_header* block)
+{
+    ics_header* header = (ics_header*) block;
+    ics_footer* footer = getFooterAddr(header);
+    size_t block_size = getBlockSize((void*)header);
+    void* prev_footer_addr = ((void*)header) - 8;
+    void* next_header_addr = ((void*)footer) + 8;
+
+    if (checkAllocated(prev_footer_addr) == 0)
+    {
+        // coalesce with previous block
+        size_t prev_block_size = getBlockSize(prev_footer_addr);
+        void* prev_header_addr = getHeaderAddr(prev_footer_addr);
+        header = (ics_header*) prev_header_addr;
+        block_size += prev_block_size;
+        removeBlock((ics_free_header*)prev_header_addr);
+    }
+    if (checkAllocated(next_header_addr) == 0)
+    {
+        // coalesce with next block
+        size_t next_block_size = getBlockSize(next_header_addr);
+        void* next_footer_addr = getFooterAddr(next_header_addr);
+        footer = (ics_footer*) next_footer_addr;
+        block_size += next_block_size;
+        removeBlock((ics_free_header*)next_header_addr);
+    }
+
+    // update block size
+    header->block_size = block_size;
+    footer->block_size = block_size;
+
+    ics_free_header* result = (ics_free_header*) header;
+    // make it null for safety
+    result->next = NULL;
+    result->prev = NULL;
+    return result;
+}
+
+void changeAllocatedBit(void* word, int a)
+{
+    ics_header* header = (ics_header*) word;
+    if (a == 1)
+    {
+        header->block_size |= 1;
+    }
+    else
+    {
+        header->block_size &= -2;
     }
 }
