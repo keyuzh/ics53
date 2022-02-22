@@ -50,12 +50,6 @@ void *ics_malloc(size_t size) {
                 // found a good block
                 void* allocated_block = allocateBlock(size, blockSize, nextFreeBlock);
                 void* payload_addr = allocated_block + 8;
-                // printf("============after malloc()===============\n");
-                // ics_freelist_print();
-                // printf("===========================\n");
-                // ics_header_print(allocated_block);
-                // printf("===========================\n");
-                // ics_payload_print(payload_addr);
                 return payload_addr;
             }
             nextFreeBlock = nextFreeBlock->next;
@@ -123,20 +117,32 @@ void *ics_realloc(void *ptr, size_t size) {
         errno = EINVAL;
         return NULL;
     }
-
-    // valid pointer and size 0, free
     if (size == 0)
     {
+        // valid pointer and size 0, free
         ics_free(ptr);
         return NULL;
     }
-
     void* header = ptr - 8;
     size_t block_size = getBlockSize(header);
-
-    if (size > block_size)
+    size_t new_block_size = calculateRequiredBlockSize(size);
+    if (new_block_size > block_size)
     {
-        // realloc to larger size
+        if (isNextBlockFree(header))
+        {
+            // if next block is free, see if we can realloc in place
+            void* next_header = ((void*)getFooterAddr(header)) + 8;
+            size_t totalSize = block_size + getBlockSize(next_header);
+            if (new_block_size <= totalSize)
+            {
+                // possible to realloc in place, claim the entire next block
+                // then realloc(shrink) to actual needed size
+                removeBlock(next_header);
+                make_header_and_footer(header, 0, totalSize, 1);
+                return ics_realloc(ptr, size);
+            }
+        }
+        // find another large block
         void* new_block = ics_malloc(size);
         if (new_block == NULL)
         {
@@ -152,16 +158,18 @@ void *ics_realloc(void *ptr, size_t size) {
     else
     {
         // realloc to smaller (or same) size
-        size_t new_block_size = calculateRequiredBlockSize(size);
-        if (new_block_size == block_size)
+        size_t diff = block_size - new_block_size;
+        if (new_block_size < block_size && (diff >= MIN_BLOCK_SIZE || isNextBlockFree(header)))
         {
-            // new size same as old size, update requested size
-            setRequestedSize(header, size);
-            return ptr;
+            // can shrink current block, make a new block and coalesce with the next
+            // block if possible
+            shrinkBlock(header, new_block_size);
         }
-        
+        // update requested size and return original address
+        setRequestedSize(header, size);
+        setRequestedSize(getFooterAddr(header), size);
+        return ptr;
     }
-
 
     return NULL;
 }

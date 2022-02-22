@@ -114,6 +114,8 @@ void* allocateBlock(size_t requested_size, size_t block_size, ics_free_header* b
     {
         // if the remaining block is too small, add it to this block
         block_size += remaining_size;
+        // remove current block from the freelist
+        removeBlock(block);
     }
     else  // split block
     {
@@ -165,7 +167,7 @@ int checkBlockValid(void* payload_addr, memory_boundries* bound)
         checkAllocated(header)
         && checkAllocated((void*)footer)  // allocated bit 'a' is set in both header and footer
         && checkHeaderField(header)       // hid field of header
-        && checkFootererField(footer)     // fid field of footer
+        && checkFooterField(footer)     // fid field of footer
         && checkSizeEqual(header, footer) // block and requested size in header and footer are equal
     );
 }
@@ -185,7 +187,7 @@ int checkHeaderField(ics_header* header)
     return (header->hid == HEADER_MAGIC);
 }
 
-int checkFootererField(ics_footer* footer)
+int checkFooterField(ics_footer* footer)
 {
     return (footer->fid == FOOTER_MAGIC);
 }
@@ -195,15 +197,6 @@ int checkSizeEqual(ics_header* header, ics_footer* footer)
     return ((header->block_size == footer->block_size)
             && (header->requested_size == footer->requested_size));
 }
-
-// void freeBlock(void* payload_addr)
-// {
-//     void* header_addr = payload_addr - 8;
-//     // try to coalesce
-//     ics_free_header* block = coalesce((ics_free_header*) header_addr);
-//     // add current block back to free list 
-//     addBlockToFreeList(block);
-// }
 
 /* 
     removes the coalesced block from the freelist
@@ -317,4 +310,29 @@ void changeAllocatedBit(void* word, int a)
     {
         header->block_size &= -2;
     }
+}
+
+int isNextBlockFree(void* header)
+{
+    void* next_header = ((void*)getFooterAddr(header)) + 8;
+    return (checkAllocated(next_header) == 0);
+}
+
+/*
+    shrink given block to size
+*/
+void shrinkBlock(ics_header* header, size_t size)
+{
+    void* old_footer = getFooterAddr(header);
+    void* new_footer = ((void*)header) + size - 8;
+    void* next_header = new_footer + 8;
+    // set requested size to 0 for now, will be updated later
+    make_header(header, 0, size, 1);
+    make_footer(new_footer, 0, size, 1);
+    // now make a new block
+    size_t new_size = old_footer - next_header + 8;
+    make_header_and_footer(next_header, 0, new_size, 0);
+    // coalesce if possible and add new block to list
+    ics_free_header* new_block = coalesce(next_header);
+    addBlockToFreeList(new_block);
 }

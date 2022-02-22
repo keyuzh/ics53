@@ -4,6 +4,7 @@
 #include "icsmm.h"
 
 #define MAX_ALLOC_SIZE 20448
+#define MIN_BLOCK_SIZE 32
 
 typedef struct memory_boundries
 {
@@ -29,7 +30,7 @@ int checkBlockValid(void* payload_addr, memory_boundries* bound);
 int checkAddressValid(void* addr, memory_boundries* bound);
 int checkAllocated(void* word);
 int checkHeaderField(ics_header* header);
-int checkFootererField(ics_footer* footer);
+int checkFooterField(ics_footer* footer);
 int checkSizeEqual(ics_header* header, ics_footer* footer);
 
 void freeBlock(void* payload_addr);
@@ -41,5 +42,9 @@ void addBlockToFreeList(ics_free_header* block);
 ics_free_header* coalesce(ics_free_header* block);
 
 void changeAllocatedBit(void* word, int a);
+
+int isNextBlockFree(void* header);
+
+void shrinkBlock(ics_header* header, size_t size);
 
 #endif
