@@ -119,30 +119,13 @@ void* allocateBlock(size_t requested_size, size_t block_size, ics_free_header* b
     }
     else  // split block
     {
-        // move the header to the splited block
+        // remove original block from list
+        removeBlock(block);
+        // make header at splited block
         ics_free_header* new_header = (ics_free_header*) (((void*)block) + block_size);
-        make_header((void*)new_header, 0, remaining_size, 0);
-        // find the address of footer and update
-        getFooterAddr((ics_header*)block)->block_size = remaining_size;
-        // move the prev and next pointer
-        new_header->next = block->next;
-        new_header->prev = block->prev;
-        // if prev pointer is null, it means that the block is the first block
-        // of the explicit list, move the freelist_head pointer as well
-        if (new_header->prev == NULL)
-        {
-            freelist_head = new_header;
-        }
-        else
-        {
-            // prev pointer not null, move the next pointer there to point at new header
-            new_header->prev->next = new_header;
-        }
-        if (new_header->next != NULL)
-        {
-            // next pointer not null, move the prev pointer there to point at new header
-            new_header->next->prev = new_header;
-        }
+        make_header_and_footer((void*)new_header, 0, remaining_size, 0);
+        // add splited block back to free list
+        addBlockToFreeList(new_header);
     }
     // create header and footer for the allocated block
     make_header_and_footer((void*)block, requested_size, block_size, 1);
