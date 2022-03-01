@@ -10,6 +10,7 @@ int main(int argc, char *argv[]) {
 
     char* message;
     Stats res;
+    setbuf(stdout, NULL);
     switch (opt.mode)
     {
     case 'L':
@@ -21,8 +22,10 @@ int main(int argc, char *argv[]) {
         res = modeWprocess(message, opt);
         break;
     }
-    fprintf(stderr, "%u\n", res.match);
     free(message);
+    fclose(stdin);
+    fclose(stdout);
+    fprintf(stderr, "%u\n", res.match);
     exit(res.exitcode);
     return 0;
 }

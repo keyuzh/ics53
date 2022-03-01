@@ -117,7 +117,10 @@ Stats modeLprocess(char* msg, Options op)
             printf("%c", temp);
             if (*msg == ' ')
             {
-                printf("%*c", op.s, ' ');
+                for (int i = 0; i < op.s; i++)
+                {
+                printf("%c", ' ');
+                }
             }
             if (op.o)
             {
