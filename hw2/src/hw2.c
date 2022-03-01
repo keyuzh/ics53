@@ -189,17 +189,20 @@ int book_tISBNDescComparator(void* lhs, void* rhs) {
 }
 
 void book_tDeleter(void* data) {
-    book_t* book = data;
-    free(book->name);
-    free(book->title);
-    DestroyList(&(book->genres));
-    free(book);
+    if (data != NULL)
+    {
+        book_t* book = data;
+        free(book->name);
+        free(book->title);
+        DestroyList(&(book->genres));
+        free(book);
+    }
 }
 
 book_t* createBook(char* line) {
     char *bookTitle, *bookISBNstr, *bookFirstName, *bookLastName, *bookPublishDate;
     bookTitle = bookISBNstr = bookFirstName = bookLastName = bookPublishDate = NULL;
-    if (line == NULL) { return NULL; }
+    if (line == NULL || my_strlen(line, 0) == 0) { return NULL; }
     char* reader = line;
     book_t* book = malloc(sizeof(book_t));
 
