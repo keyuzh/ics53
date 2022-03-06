@@ -78,12 +78,27 @@ void my_strcpy(char* dest, char** src, int length)
     *src = ++read;
 }
 
+void removeQuote(char* str)
+{
+    if (*str == '"')
+    {
+        char* dest = str;
+        char* org = str+1;
+        while (*org != '"' && *org != '\0')
+        {
+            *dest++ = *org++;
+        }
+        *dest = 0;
+    }
+}
+
 char* getNextField(char** org)
 {
     if (org == NULL || *org == NULL) { return NULL; }
     int nextFieldLength = my_strlen(*org, ',');
     char* str = malloc(nextFieldLength + 1);
     my_strcpy(str, org, nextFieldLength);
+    removeQuote(str);
     if (*str == '\0')
     {
         free(str);
@@ -261,19 +276,21 @@ void printTitle(char* title, void* fp, int flag)
     // flag == 1, hasQuotes == 1  -> dont add quotes
     // flag == 0, hasQuotes == 0  -> dont add quotes
     // flag == 0, hasQuotes == 1  -> remove quotes
+    //  UPDATE 2022-03-01: flag == 1 -> add quotes ; flag==0 -> no quotes
     // printf("\nflag: %d, hasQuotes: %d\n", flag, hasQuotes);
     // printf("title: %s\n", title);
-    if (flag == 0 && hasQuotes)
-    {
-        // remove quotes
-        char* ptr = ++title;
-        while (*ptr != '"')
-        {
-            fprintf(fp, "%c", *ptr);
-            ++ptr;
-        }
-    }
-    else if (flag && hasQuotes == 0)
+    // if (flag == 0 && hasQuotes)
+    // {
+    //     // remove quotes
+    //     char* ptr = ++title;
+    //     while (*ptr != '"')
+    //     {
+    //         fprintf(fp, "%c", *ptr);
+    //         ++ptr;
+    //     }
+    // }
+    // else if (flag && hasQuotes == 0)
+    if (flag)
     {
         fprintf(fp, "\"%s\"\t", title);
     }

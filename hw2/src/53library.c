@@ -120,6 +120,7 @@ int main(int argc, char* argv[]) {
         // match book while reading to save memory
         if (bookMatch(nextBook, &criterion))
         {
+            
             if (ORDER_arg == 'n')
             {
                 InsertAtTail(library, nextBook);
@@ -152,12 +153,22 @@ int main(int argc, char* argv[]) {
         out = stdout;
     }
 
+    if (I_flag && library->length > 1)
+    {
+        // cannot match more than 1 ISBN
+        fclose(out);
+        DestroyList(&library);
+        exit(2);
+    }
+
     // iterate through the linked list and search book
     node_t* ptr = library->head;
-    while (ptr != NULL)
+    int i = 0;
+    while (ptr != NULL && (NUM_arg == 0 || i < NUM_arg))
     {
         library->printer(ptr->data, out, 1);
         ptr = ptr->next;
+        ++i;
     }
     // clean up
     fclose(out);
